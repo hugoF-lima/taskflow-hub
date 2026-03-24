@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { Task, Feedback, AppFilters, SidebarMode, AppSettings, ViewMode, UrgencyLevel, FeedbackTopic, TaskStatus } from '@/types';
-import { tasks as initialTasks } from '@/data/mockData';
+import { tasks as initialTasks, users } from '@/data/mockData';
 
 interface AppContextType {
   tasks: Task[];
