@@ -21,6 +21,8 @@ interface AppContextType {
   toggleTaskImportance: (taskId: string) => void;
   filteredTasks: Task[];
   getTaskStatus: (task: Task) => TaskStatus;
+  zoomLevel: number;
+  setZoomLevel: (level: number) => void;
 }
 
 const defaultFilters: AppFilters = {
@@ -51,6 +53,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     darkMode: false,
     managerDashboard: false,
   });
+  const [zoomLevel, setZoomLevel] = useState(100);
 
   const setFilter = useCallback(<K extends keyof AppFilters>(key: K, value: AppFilters[K]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -160,8 +163,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection,
     viewMode, setViewMode, settings, toggleSetting,
     addFeedback, toggleTaskCompletion, toggleTaskImportance,
-    filteredTasks, getTaskStatus,
-  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus]);
+    filteredTasks, getTaskStatus, zoomLevel, setZoomLevel,
+  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

@@ -2,7 +2,8 @@ import { useAppContext } from '@/context/AppContext';
 import { departments, allProcesses } from '@/data/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import { UrgencyLevel, FeedbackTopic, TaskStatus } from '@/types';
 
 const feedbackTopics: FeedbackTopic[] = ['Organização', 'Comunicação', 'Pro atividade', 'Prioridades', 'ICC', 'KISS', 'Reportar problemas'];
@@ -20,7 +21,7 @@ const urgencyOptions: { value: UrgencyLevel; label: string }[] = [
 ];
 
 export function FilterBar() {
-  const { filters, setFilter, resetFilters } = useAppContext();
+  const { filters, setFilter, resetFilters, zoomLevel, setZoomLevel } = useAppContext();
 
   const hasFilters = Object.values(filters).some(v => {
     if (v && typeof v === 'object' && 'from' in v) return v.from || v.to;
@@ -94,6 +95,20 @@ export function FilterBar() {
           <X className="h-3 w-3" /> Limpar
         </Button>
       )}
+
+      <div className="ml-auto flex items-center gap-2">
+        <ZoomOut className="h-3.5 w-3.5 text-muted-foreground" />
+        <Slider
+          value={[zoomLevel]}
+          onValueChange={([v]) => setZoomLevel(v)}
+          min={60}
+          max={140}
+          step={10}
+          className="w-[100px]"
+        />
+        <ZoomIn className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground w-8 text-center">{zoomLevel}%</span>
+      </div>
     </div>
   );
 }

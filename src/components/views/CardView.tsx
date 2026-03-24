@@ -5,7 +5,7 @@ import { TaskCard } from '@/components/TaskCard';
 import { cn } from '@/lib/utils';
 
 export function CardView() {
-  const { filteredTasks, selectedUserId, sidebarMode } = useAppContext();
+  const { filteredTasks, selectedUserId, sidebarMode, zoomLevel } = useAppContext();
   const containerRef = useRef<HTMLDivElement>(null);
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -21,7 +21,10 @@ export function CardView() {
 
   return (
     <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar">
-      <div className="flex gap-4 p-4 h-full min-w-max">
+      <div
+        className="flex gap-4 p-4 h-full min-w-max origin-top-left transition-transform"
+        style={{ transform: `scale(${zoomLevel / 100})` }}
+      >
         {activeUsers.map(user => {
           const dept = departments.find(d => d.id === user.departmentId);
           const userTasks = filteredTasks.filter(t => t.assigneeId === user.id);
