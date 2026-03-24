@@ -137,9 +137,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (sidebarMode === 'isolate' && selectedUserId && task.assigneeId !== selectedUserId) return false;
 
       if (filters.departmentId) {
-        // need to check user's department
-        const { users } = require('@/data/mockData');
-        const user = users.find((u: any) => u.id === task.assigneeId);
+        const user = users.find(u => u.id === task.assigneeId);
         if (user && user.departmentId !== filters.departmentId) return false;
       }
       if (filters.process && task.process !== filters.process) return false;
