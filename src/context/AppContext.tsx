@@ -53,6 +53,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     darkMode: false,
     managerDashboard: false,
   });
+  const [zoomLevel, setZoomLevel] = useState(100);
 
   const setFilter = useCallback(<K extends keyof AppFilters>(key: K, value: AppFilters[K]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
