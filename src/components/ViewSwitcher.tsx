@@ -3,7 +3,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { LayoutGrid, List, Grid2x2 } from 'lucide-react';
 import { ViewMode } from '@/types';
 
-export function ViewSwitcher() {
+export function ViewSwitcher() { // force rebuild
   const { viewMode, setViewMode } = useAppContext();
 
   return (
