@@ -57,6 +57,21 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        urgency: {
+          normal: "hsl(var(--urgency-normal))",
+          medium: "hsl(var(--urgency-medium))",
+          critical: "hsl(var(--urgency-critical))",
+          critical24h: "hsl(var(--urgency-critical24h))",
+          report: "hsl(var(--urgency-report))",
+        },
+        dept: {
+          comercial: "hsl(var(--dept-comercial))",
+          informatica: "hsl(var(--dept-informatica))",
+          expedicao: "hsl(var(--dept-expedicao))",
+          almoxarifado: "hsl(var(--dept-almoxarifado))",
+          processos: "hsl(var(--dept-processos))",
+          rh: "hsl(var(--dept-rh))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,20 +80,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
