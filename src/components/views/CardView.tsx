@@ -11,17 +11,21 @@ export function CardView() {
 
   const activeUsers = users.filter(u => filteredTasks.some(t => t.assigneeId === u.id));
 
+  const HORIZONTAL_SCROLL_SPEED = 0.3; // ms for smooth scroll behavior (increase = slower feel)
+
+  const handleCardHoverFocus = (el: HTMLDivElement) => {
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  };
+
     // Inside your CardView function
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const handleWheel = (e: WheelEvent) => {
-      // If the user is scrolling vertically (deltaY), 
-      // we move the scrollbar horizontally instead.
       if (e.deltaY !== 0) {
         e.preventDefault();
-        container.scrollLeft += e.deltaY;
+        container.scrollLeft += e.deltaY * HORIZONTAL_SCROLL_SPEED;
       }
     };
 
@@ -103,7 +107,7 @@ export function CardView() {
               {/* Task cards container */}
               <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 p-2 bg-muted/30 rounded-b-xl min-h-0">
                 {userTasks.map(task => (
-                  <TaskCard key={task.id} task={task} />
+                  <TaskCard key={task.id} task={task} onHoverFocus={handleCardHoverFocus}/>
                 ))}
                 {userTasks.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-8">Nenhuma tarefa</p>

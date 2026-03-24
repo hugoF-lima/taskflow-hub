@@ -9,7 +9,7 @@ import { MessageSquare, Star, Check, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { FeedbackModal } from './FeedbackModal';
 import { toast } from '@/hooks/use-toast';
 
@@ -27,11 +27,29 @@ function getUrgencyClasses(urgency: UrgencyLevel) {
 interface TaskCardProps {
   task: Task;
   compact?: boolean;
+  onHoverFocus?: (el: HTMLDivElement) => void;
 }
 
-export function TaskCard({ task, compact }: TaskCardProps) {
+export function TaskCard({ task, compact, onHoverFocus }: TaskCardProps) {
   const { toggleTaskCompletion, toggleTaskImportance, getTaskStatus, settings } = useAppContext();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    hoverTimerRef.current = setTimeout(() => {
+      if (cardRef.current && onHoverFocus) {
+        onHoverFocus(cardRef.current);
+      }
+    }, 120);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  };
   const user = users.find(u => u.id === task.assigneeId);
   const dept = departments.find(d => d.id === user?.departmentId);
   const status = getTaskStatus(task);
@@ -53,6 +71,9 @@ export function TaskCard({ task, compact }: TaskCardProps) {
       <HoverCard openDelay={400}>
         <HoverCardTrigger asChild>
           <Card
+          ref={cardRef}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
             className={cn(
               'p-3 cursor-pointer transition-all hover:shadow-md border',
               task.completed && 'opacity-60',
