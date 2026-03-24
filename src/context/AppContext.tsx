@@ -21,6 +21,8 @@ interface AppContextType {
   toggleTaskImportance: (taskId: string) => void;
   filteredTasks: Task[];
   getTaskStatus: (task: Task) => TaskStatus;
+  zoomLevel: number;
+  setZoomLevel: (level: number) => void;
 }
 
 const defaultFilters: AppFilters = {
