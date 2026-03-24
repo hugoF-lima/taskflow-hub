@@ -95,6 +95,20 @@ export function FilterBar() {
           <X className="h-3 w-3" /> Limpar
         </Button>
       )}
+
+      <div className="ml-auto flex items-center gap-2">
+        <ZoomOut className="h-3.5 w-3.5 text-muted-foreground" />
+        <Slider
+          value={[zoomLevel]}
+          onValueChange={([v]) => setZoomLevel(v)}
+          min={60}
+          max={140}
+          step={10}
+          className="w-[100px]"
+        />
+        <ZoomIn className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground w-8 text-center">{zoomLevel}%</span>
+      </div>
     </div>
   );
 }

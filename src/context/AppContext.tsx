@@ -163,8 +163,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection,
     viewMode, setViewMode, settings, toggleSetting,
     addFeedback, toggleTaskCompletion, toggleTaskImportance,
-    filteredTasks, getTaskStatus,
-  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus]);
+    filteredTasks, getTaskStatus, zoomLevel, setZoomLevel,
+  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
