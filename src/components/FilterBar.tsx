@@ -21,6 +21,18 @@ const urgencyOptions: { value: UrgencyLevel; label: string }[] = [
 ];
 
 export function FilterBar() {
+
+  const handleZoomIn = () => {
+    // Use the variable directly instead of 'prev'
+    const newValue = Math.min(zoomLevel + 10, 140);
+    setZoomLevel(newValue);
+  };
+
+  const handleZoomOut = () => {
+    const newValue = Math.max(zoomLevel - 10, 60);
+    setZoomLevel(newValue);
+  };
+
   const { filters, setFilter, resetFilters, zoomLevel, setZoomLevel } = useAppContext();
 
   const hasFilters = Object.values(filters).some(v => {
@@ -31,7 +43,7 @@ export function FilterBar() {
   return (
     <div className="flex items-center gap-2 flex-wrap px-4 py-2 bg-card/50 border-b">
       <Select value={filters.departmentId ?? '__all'} onValueChange={v => setFilter('departmentId', v === '__all' ? null : v)}>
-        <SelectTrigger className="h-8 w-[140px] text-xs">
+        <SelectTrigger className="h-8 w-[150px] text-xs">
           <SelectValue placeholder="Setor" />
         </SelectTrigger>
         <SelectContent>
@@ -55,7 +67,7 @@ export function FilterBar() {
       </Select>
 
       <Select value={filters.urgency ?? '__all'} onValueChange={v => setFilter('urgency', v === '__all' ? null : (v as UrgencyLevel))}>
-        <SelectTrigger className="h-8 w-[130px] text-xs">
+        <SelectTrigger className="h-8 w-[160px] text-xs">
           <SelectValue placeholder="Urgência" />
         </SelectTrigger>
         <SelectContent>
@@ -97,7 +109,7 @@ export function FilterBar() {
       )}
 
       <div className="ml-auto flex items-center gap-2">
-        <ZoomOut className="h-3.5 w-3.5 text-muted-foreground" />
+        <ZoomOut type="button" onClick={handleZoomOut} className="h-3.5 w-3.5 text-muted-foreground" />
         <Slider
           value={[zoomLevel]}
           onValueChange={([v]) => setZoomLevel(v)}
@@ -106,7 +118,7 @@ export function FilterBar() {
           step={10}
           className="w-[100px]"
         />
-        <ZoomIn className="h-3.5 w-3.5 text-muted-foreground" />
+        <ZoomIn type="button" onClick={handleZoomIn} className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-[10px] text-muted-foreground w-8 text-center">{zoomLevel}%</span>
       </div>
     </div>

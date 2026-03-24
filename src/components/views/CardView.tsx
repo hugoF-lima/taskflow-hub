@@ -9,21 +9,57 @@ export function CardView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Get users that have tasks
   const activeUsers = users.filter(u => filteredTasks.some(t => t.assigneeId === u.id));
 
-  // Scroll to highlighted user column
+    // Inside your CardView function
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // If the user is scrolling vertically (deltaY), 
+      // we move the scrollbar horizontally instead.
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY;
+      }
+    };
+
+    // { passive: false } is required to allow e.preventDefault()
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   useEffect(() => {
     if (sidebarMode === 'highlight' && selectedUserId && columnRefs.current[selectedUserId]) {
-      columnRefs.current[selectedUserId]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      columnRefs.current[selectedUserId]?.scrollIntoView({ 
+        behavior: 'smooth', 
+        inline: 'center', 
+        block: 'nearest' 
+      });
     }
   }, [selectedUserId, sidebarMode]);
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar">
+    /* Parent: overflow-x-auto allows the board to scroll sideways.
+       h-full + min-h-0 ensures it stays within the DashboardContent's boundaries.
+    */
+    <div 
+      ref={containerRef} 
+      className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-hidden custom-scrollbar"
+    >
       <div
-        className="flex gap-4 p-4 h-full min-w-max origin-top-left transition-transform"
-        style={{ transform: `scale(${zoomLevel / 100})` }}
+        className="flex gap-4 p-4 min-w-max h-full origin-top-left transition-transform"
+        style={{ 
+          transform: `scale(${zoomLevel / 100})`, 
+          // We use width/height adjustments to ensure the scrollable area 
+          // matches the visual size after scaling
+          width: `${10000 / zoomLevel}%`, 
+          height: `${10000 / zoomLevel}%` 
+        }}
       >
         {activeUsers.map(user => {
           const dept = departments.find(d => d.id === user.departmentId);
@@ -35,29 +71,37 @@ export function CardView() {
               key={user.id}
               ref={el => { columnRefs.current[user.id] = el; }}
               className={cn(
-                'w-[280px] shrink-0 flex flex-col rounded-xl transition-all',
+                /* shrink-0 is VITAL: stops columns from squishing.
+                   max-h-full: keeps the column from growing taller than the board.
+                */
+                'w-[280px] shrink-0 flex flex-col max-h-full rounded-xl transition-all',
                 isHighlighted && 'ring-2 ring-primary shadow-lg'
               )}
             >
               {/* Column header */}
               <div
-                className="rounded-t-xl px-3 py-2 flex items-center justify-between"
+                className="rounded-t-xl px-3 py-2 flex items-center justify-between shrink-0"
                 style={{ background: `hsl(${dept?.color ?? '0 0% 50%'} / 0.1)` }}
               >
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{user.name}</p>
+                  <p className="text-sm font-semibold text-foreground truncate w-[180px]">
+                    {user.name}
+                  </p>
                   <p className="text-[10px] text-muted-foreground">{dept?.name}</p>
                 </div>
                 <span
-                  className="text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
-                  style={{ background: `hsl(${dept?.color ?? '0 0% 50%'} / 0.2)`, color: `hsl(${dept?.color ?? '0 0% 50%'})` }}
+                  className="text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shrink-0"
+                  style={{ 
+                    background: `hsl(${dept?.color ?? '0 0% 50%'} / 0.2)`, 
+                    color: `hsl(${dept?.color ?? '0 0% 50%'})` 
+                  }}
                 >
                   {userTasks.length}
                 </span>
               </div>
 
-              {/* Task cards */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 p-2 bg-muted/30 rounded-b-xl">
+              {/* Task cards container */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 p-2 bg-muted/30 rounded-b-xl min-h-0">
                 {userTasks.map(task => (
                   <TaskCard key={task.id} task={task} />
                 ))}
