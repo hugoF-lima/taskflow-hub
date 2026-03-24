@@ -2,7 +2,8 @@ import { useAppContext } from '@/context/AppContext';
 import { departments, allProcesses } from '@/data/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import { UrgencyLevel, FeedbackTopic, TaskStatus } from '@/types';
 
 const feedbackTopics: FeedbackTopic[] = ['Organização', 'Comunicação', 'Pro atividade', 'Prioridades', 'ICC', 'KISS', 'Reportar problemas'];
