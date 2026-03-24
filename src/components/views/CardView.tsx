@@ -5,7 +5,7 @@ import { TaskCard } from '@/components/TaskCard';
 import { cn } from '@/lib/utils';
 
 export function CardView() {
-  const { filteredTasks, selectedUserId, sidebarMode } = useAppContext();
+  const { filteredTasks, selectedUserId, sidebarMode, zoomLevel } = useAppContext();
   const containerRef = useRef<HTMLDivElement>(null);
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
