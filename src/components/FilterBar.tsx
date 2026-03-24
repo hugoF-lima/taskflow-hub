@@ -21,7 +21,7 @@ const urgencyOptions: { value: UrgencyLevel; label: string }[] = [
 ];
 
 export function FilterBar() {
-  const { filters, setFilter, resetFilters } = useAppContext();
+  const { filters, setFilter, resetFilters, zoomLevel, setZoomLevel } = useAppContext();
 
   const hasFilters = Object.values(filters).some(v => {
     if (v && typeof v === 'object' && 'from' in v) return v.from || v.to;
