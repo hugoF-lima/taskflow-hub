@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { users, departments } from '@/data/mockData';
 import { TaskCard } from '@/components/TaskCard';
@@ -10,62 +10,62 @@ export function CardView() {
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const columnScrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const HORIZONTAL_SCROLL_SPEED = 1.5; // multiplier: increase = faster horizontal scroll
+  // Dwell tracking: only enable vertical scroll after mouse stays in column for DWELL_MS
+  const DWELL_MS = 150;
+  const HORIZONTAL_SCROLL_SPEED = 1.5;
+  const dwellingColumnId = useRef<string | null>(null);
+  const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDwelling = useRef(false);
 
   const activeUsers = users.filter(u => filteredTasks.some(t => t.assigneeId === u.id));
 
-  // Redirect wheel to horizontal when column is at scroll limit
-  useEffect(() => {
-    const listeners: Array<{ el: HTMLDivElement; fn: (e: WheelEvent) => void }> = [];
+  const handleColumnEnter = useCallback((userId: string) => {
+    dwellingColumnId.current = userId;
+    isDwelling.current = false;
+    if (dwellTimer.current) clearTimeout(dwellTimer.current);
+    dwellTimer.current = setTimeout(() => {
+      if (dwellingColumnId.current === userId) {
+        isDwelling.current = true;
+      }
+    }, DWELL_MS);
+  }, []);
 
-    Object.entries(columnScrollRefs.current).forEach(([, colEl]) => {
-      if (!colEl) return;
+  const handleColumnLeave = useCallback(() => {
+    dwellingColumnId.current = null;
+    isDwelling.current = false;
+    if (dwellTimer.current) clearTimeout(dwellTimer.current);
+  }, []);
 
-      const handleColWheel = (e: WheelEvent) => {
-        const { scrollTop, scrollHeight, clientHeight } = colEl;
-        const atTop = scrollTop === 0;
-        const atBottom = Math.abs(scrollTop + clientHeight - scrollHeight) < 1;
-        const scrollingUp = e.deltaY < 0;
-        const scrollingDown = e.deltaY > 0;
-
-        // Column has room to scroll — let the browser handle it naturally
-        if ((scrollingDown && !atBottom) || (scrollingUp && !atTop)) return;
-
-        // Column is at its limit — redirect to outer horizontal scroll
-        e.preventDefault();
-        e.stopPropagation();
-        if (containerRef.current) {
-          containerRef.current.scrollLeft += e.deltaY * HORIZONTAL_SCROLL_SPEED;
-        }
-      };
-
-      colEl.addEventListener('wheel', handleColWheel, { passive: false });
-      listeners.push({ el: colEl, fn: handleColWheel });
-    });
-
-    return () => {
-      listeners.forEach(({ el, fn }) => el.removeEventListener('wheel', fn));
-    };
-  }, [activeUsers]);
-
-  // Also handle wheel on the outer container only when NOT over a column
+  // Single wheel handler on the outer container (capture phase)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const handleOuterWheel = (e: WheelEvent) => {
-      // Only act if the event target is NOT inside a column scroll area
-      const isInsideColumn = Object.values(columnScrollRefs.current).some(
-        colEl => colEl && colEl.contains(e.target as Node)
-      );
-      if (isInsideColumn) return;
+    const handleWheel = (e: WheelEvent) => {
+      const activeColId = dwellingColumnId.current;
+      const colEl = activeColId ? columnScrollRefs.current[activeColId] : null;
 
+      // If dwelling in a column and it has scroll room, let vertical scroll happen
+      if (isDwelling.current && colEl) {
+        const { scrollTop, scrollHeight, clientHeight } = colEl;
+        const atTop = scrollTop <= 0;
+        const atBottom = Math.abs(scrollTop + clientHeight - scrollHeight) < 1;
+        const scrollingUp = e.deltaY < 0;
+        const scrollingDown = e.deltaY > 0;
+
+        if ((scrollingDown && !atBottom) || (scrollingUp && !atTop)) {
+          // Column has room — let browser handle vertically
+          return;
+        }
+      }
+
+      // Otherwise redirect to horizontal scroll
       e.preventDefault();
       container.scrollLeft += e.deltaY * HORIZONTAL_SCROLL_SPEED;
     };
 
-    container.addEventListener('wheel', handleOuterWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleOuterWheel);
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
   // Scroll to highlighted user column
@@ -131,6 +131,8 @@ export function CardView() {
               {/* Task cards container */}
               <div
                 ref={el => { columnScrollRefs.current[user.id] = el; }}
+                onMouseEnter={() => handleColumnEnter(user.id)}
+                onMouseLeave={handleColumnLeave}
                 className="flex-1 overflow-y-auto custom-scrollbar space-y-2 p-2 bg-muted/30 rounded-b-xl min-h-0"
               >
                 {userTasks.map(task => (
