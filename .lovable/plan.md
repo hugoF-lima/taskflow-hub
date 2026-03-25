@@ -1,36 +1,33 @@
 
 
-## Plan: Fix Responsáveis Scroll, 24h Time, and Button Dropdown
+## Plan: Fix Sidebar Double-Click Index Bug & "Mostrar todos" Layout Shift
 
-### 1. Fix Responsáveis Popover Scrolling
+### 1. Fix Double-Click Selecting Wrong User
 
-**File:** `src/components/NewTaskDialog.tsx`
+The double-click fires two click events first (selecting/highlighting a user via `handleUserClick`), which can change `selectedUserId` before `handleUserDoubleClick` runs. The single-click handler toggles highlight mode — so by the time the double-click fires, the state may have shifted.
 
-Replace `<ScrollArea className="h-60">` with a plain `<div>` using `overflow-y-auto max-h-60`. Radix `ScrollArea` inside Radix `Popover` has a known conflict where the viewport intercepts wheel events. A native scrollable div resolves this.
+**Fix:** Use a click delay pattern. On `onClick`, set a short timeout (~250ms). If a double-click arrives within that window, cancel the timeout and only run `handleUserDoubleClick`. This prevents `handleUserClick` from interfering.
 
-### 2. Ensure 24h Time Format
+**File:** `src/components/AppSidebar.tsx`
+- Import `useRef, useCallback` from React
+- Add a `clickTimerRef = useRef<NodeJS.Timeout | null>(null)`
+- On `onClick`: clear any existing timer, set a new 250ms timeout that calls `handleUserClick(user.id)`
+- On `onDoubleClick`: clear the timer, call `handleUserDoubleClick(user.id)`
 
-**File:** `src/components/NewTaskDialog.tsx`
+### 2. Fix "Mostrar todos" Causing Layout Shift
 
-The native `<input type="time">` renders in 12h or 24h depending on browser locale. To force 24h, add the `lang="pt-BR"` attribute to the time input element — this hints the browser to use 24h format regardless of system locale.
+Currently the "Mostrar todos" button is a separate block element inside `SidebarHeader` that pushes content down when it appears.
 
-### 3. Rework "Criar Atividade" Button as Split-Button with Dropdown
+**Fix:** Place "Mostrar todos" inline next to the "Equipe" label in the same flex row, using `ml-auto` to push it to the right. It only renders when `sidebarMode !== 'none'`.
 
-**File:** `src/components/NewTaskDialog.tsx`
-
-Replace the current dual-button approach with a proper split-button using `DropdownMenu`:
-
-- Main button shows `"Criar Atividade"` by default, or `"Criar Atividade + Nova"` when mode is active
-- A small dropdown arrow button sits adjacent (right side), containing one option: `"+ Nova"`
-- Clicking `"+ Nova"` from the dropdown toggles `createAndNewMode` to `true`, changing the main button label to `"Criar Atividade + Nova"`
-- Clicking the main button when in `createAndNewMode`: creates the task, resets the form, sets `createAndNewMode` back to `false`, keeps dialog open
-- Clicking the main button when NOT in `createAndNewMode`: creates the task, closes the dialog
-
-Import `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem` and `ChevronDown` icon.
+**File:** `src/components/AppSidebar.tsx`
+- Move the `Button` inside the same `<div>` that contains the `Users` icon and "Equipe" label
+- Add `ml-auto` to the button so it aligns right
+- Remove the separate conditional block below
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/NewTaskDialog.tsx` | All three fixes |
+| `src/components/AppSidebar.tsx` | Click/double-click disambiguation + inline "Mostrar todos" |
 
