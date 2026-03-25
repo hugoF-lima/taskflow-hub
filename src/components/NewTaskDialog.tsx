@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { users, departments, allProcesses, urgencyConfig } from '@/data/mockData';
 import { UrgencyLevel } from '@/types';
@@ -13,13 +13,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { CalendarIcon, ChevronDown } from 'lucide-react';
-import { format } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { CalendarIcon, Paperclip, X } from 'lucide-react';
+import { format, startOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+interface Attachment {
+  name: string;
+  type: string;
+  size: number;
+  file: File;
+}
 
 interface NewTaskDialogProps {
   open: boolean;
@@ -38,6 +44,10 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
   const [process, setProcess] = useState('');
   const [observations, setObservations] = useState('');
   const [important, setImportant] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [createAndNewMode, setCreateAndNewMode] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
     setAssigneeIds([]);
@@ -49,6 +59,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
     setProcess('');
     setObservations('');
     setImportant(false);
+    setAttachments([]);
   };
 
   const buildDeadline = (): string => {
@@ -62,7 +73,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
 
   const canSubmit = assigneeIds.length > 0 && (deadline || noDeadline) && title && process;
 
-  const handleSubmit = (keepOpen: boolean) => {
+  const handleSubmit = () => {
     if (!canSubmit) return;
     addTask({
       title,
@@ -74,8 +85,15 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
       observations,
       completed: false,
     });
-    resetForm();
-    if (!keepOpen) onOpenChange(false);
+    toast.success('Atividade criada com sucesso!');
+
+    if (createAndNewMode) {
+      resetForm();
+      setCreateAndNewMode(false);
+    } else {
+      resetForm();
+      onOpenChange(false);
+    }
   };
 
   const toggleAssignee = (userId: string) => {
@@ -84,52 +102,86 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
     );
   };
 
+  // Show first + last name (first two words)
+  const getDisplayName = (fullName: string) => {
+    const parts = fullName.split(' ');
+    return parts.length >= 2 ? `${parts[0]} ${parts[1]}` : parts[0];
+  };
+
   const selectedNames = assigneeIds
-    .map(id => users.find(u => u.id === id)?.name?.split(' ')[0])
+    .map(id => {
+      const u = users.find(u => u.id === id);
+      return u ? getDisplayName(u.name) : null;
+    })
     .filter(Boolean)
     .join(', ');
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newAttachments: Attachment[] = Array.from(files).map(f => ({
+      name: f.name,
+      type: f.type,
+      size: f.size,
+      file: f,
+    }));
+    setAttachments(prev => [...prev, ...newAttachments]);
+    e.target.value = '';
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const today = startOfToday();
+
+  const buttonLabel = createAndNewMode ? 'Criar Atividade + Nova' : 'Criar Atividade';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova Atividade</DialogTitle>
           <DialogDescription>Preencha os campos para criar uma nova atividade.</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
-          {/* Responsáveis (multi-select) */}
+          {/* Responsáveis (multi-select with scroll) */}
           <div className="grid gap-1.5">
             <Label className="text-xs">Responsáveis</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="h-9 justify-start text-left text-xs font-normal">
+                <Button variant="outline" className="h-9 justify-start text-left text-xs font-normal truncate">
                   {assigneeIds.length > 0 ? selectedNames : <span className="text-muted-foreground">Selecione...</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-64 p-2 max-h-60 overflow-y-auto" align="start">
-                {users.map(u => {
-                  const dept = departments.find(d => d.id === u.departmentId);
-                  return (
-                    <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
-                      <Checkbox
-                        checked={assigneeIds.includes(u.id)}
-                        onCheckedChange={() => toggleAssignee(u.id)}
-                      />
-                      <span>{u.name}</span>
-                      <span className="text-muted-foreground ml-auto text-[10px]">{dept?.name}</span>
-                    </label>
-                  );
-                })}
+              <PopoverContent className="w-64 p-0" align="start">
+                <ScrollArea className="h-60">
+                  <div className="p-2">
+                    {users.map(u => {
+                      const dept = departments.find(d => d.id === u.departmentId);
+                      return (
+                        <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
+                          <Checkbox
+                            checked={assigneeIds.includes(u.id)}
+                            onCheckedChange={() => toggleAssignee(u.id)}
+                          />
+                          <span>{getDisplayName(u.name)}</span>
+                          <span className="text-muted-foreground ml-auto text-[10px]">{dept?.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               </PopoverContent>
             </Popover>
           </div>
 
-          {/* Data + Hora */}
+          {/* Data + Hora (24h) */}
           <div className="grid gap-1.5">
             <Label className="text-xs">Data e Hora de Entrega</Label>
             <div className="flex items-center gap-2">
-              <Popover>
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -144,7 +196,12 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
                   <Calendar
                     mode="single"
                     selected={deadline}
-                    onSelect={setDeadline}
+                    onSelect={(day) => {
+                      setDeadline(day);
+                      setCalendarOpen(false);
+                    }}
+                    defaultMonth={today}
+                    disabled={(date) => date < today}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
@@ -155,7 +212,8 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
                 value={deadlineTime}
                 onChange={e => setDeadlineTime(e.target.value)}
                 disabled={noDeadline}
-                className="h-9 w-24 text-xs"
+                className="h-9 w-28 text-xs"
+                step="60"
               />
               <div className="flex items-center gap-1.5">
                 <Checkbox id="noDeadline" checked={noDeadline} onCheckedChange={c => { setNoDeadline(c === true); if (c) setDeadline(undefined); }} />
@@ -205,10 +263,43 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
             </div>
           </div>
 
-          {/* Descrição */}
+          {/* Descrição + Anexos */}
           <div className="grid gap-1.5">
-            <Label htmlFor="obs" className="text-xs">Descrição / Observações</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="obs" className="text-xs">Descrição / Observações</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs gap-1 text-muted-foreground"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="h-3 w-3" />
+                Anexar
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
             <Textarea id="obs" value={observations} onChange={e => setObservations(e.target.value)} placeholder="Detalhes adicionais..." className="text-xs min-h-[60px]" />
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {attachments.map((att, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground">
+                    <Paperclip className="h-2.5 w-2.5" />
+                    {att.name.length > 20 ? att.name.slice(0, 17) + '...' : att.name}
+                    <button type="button" onClick={() => removeAttachment(i)} className="ml-0.5 hover:text-foreground">
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Importante */}
@@ -220,22 +311,25 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <div className="flex items-center">
-            <Button size="sm" onClick={() => handleSubmit(false)} disabled={!canSubmit} className="rounded-r-none">
-              Criar Atividade
+          <div className="flex items-center gap-0">
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className={cn(!createAndNewMode && 'rounded-r-none')}
+            >
+              {buttonLabel}
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" disabled={!canSubmit} className="rounded-l-none border-l border-l-primary-foreground/30 px-1.5">
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleSubmit(true)} className="text-xs">
-                  Criar Atividade + Nova
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!createAndNewMode && (
+              <Button
+                size="sm"
+                variant="default"
+                className="rounded-l-none border-l border-l-primary-foreground/30 px-1.5"
+                onClick={() => setCreateAndNewMode(true)}
+              >
+                <span className="text-[10px]">+ Nova</span>
+              </Button>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>
