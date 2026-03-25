@@ -1,61 +1,36 @@
 
 
-## Plan: View Switcher, Eisenhower Colors, Universal Zoom & Search Bar
+## Plan: Fix Responsáveis Scroll, 24h Time, and Button Dropdown
 
-### 1. Replace ViewSwitcher with a Combobox
+### 1. Fix Responsáveis Popover Scrolling
 
-**File:** `src/components/ViewSwitcher.tsx`
+**File:** `src/components/NewTaskDialog.tsx`
 
-Replace the `ToggleGroup` with a `Select` (dropdown) showing each view as `Icon + Label`:
-- "Card View" + `LayoutGrid`
-- "List View" + `List`
-- "Eisenhower View" + `Grid2x2`
+Replace `<ScrollArea className="h-60">` with a plain `<div>` using `overflow-y-auto max-h-60`. Radix `ScrollArea` inside Radix `Popover` has a known conflict where the viewport intercepts wheel events. A native scrollable div resolves this.
 
-Each `SelectItem` renders the icon inline next to the text. The trigger shows the currently selected view's icon + name.
+### 2. Ensure 24h Time Format
 
-### 2. Eisenhower View Background Colors
+**File:** `src/components/NewTaskDialog.tsx`
 
-**File:** `src/components/views/EisenhowerView.tsx`
+The native `<input type="time">` renders in 12h or 24h depending on browser locale. To force 24h, add the `lang="pt-BR"` attribute to the time input element — this hints the browser to use 24h format regardless of system locale.
 
-When Eisenhower view is active, apply dim background tints to each quadrant reflecting the classic diagram:
-- **Urgent + Important** (top-left): warm red/orange tint
-- **Important + Not Urgent** (top-right): calm blue/green tint
-- **Urgent + Not Important** (bottom-left): yellow/amber tint
-- **Not Urgent + Not Important** (bottom-right): gray tint
+### 3. Rework "Criar Atividade" Button as Split-Button with Dropdown
 
-Use inline `style` with low-opacity HSL backgrounds (already partially done — increase opacity slightly and ensure colors match the conceptual model).
+**File:** `src/components/NewTaskDialog.tsx`
 
-### 3. Universal Zoom for All Views
+Replace the current dual-button approach with a proper split-button using `DropdownMenu`:
 
-**Files:** `src/components/views/ListView.tsx`, `src/components/views/EisenhowerView.tsx`
+- Main button shows `"Criar Atividade"` by default, or `"Criar Atividade + Nova"` when mode is active
+- A small dropdown arrow button sits adjacent (right side), containing one option: `"+ Nova"`
+- Clicking `"+ Nova"` from the dropdown toggles `createAndNewMode` to `true`, changing the main button label to `"Criar Atividade + Nova"`
+- Clicking the main button when in `createAndNewMode`: creates the task, resets the form, sets `createAndNewMode` back to `false`, keeps dialog open
+- Clicking the main button when NOT in `createAndNewMode`: creates the task, closes the dialog
 
-Apply the same zoom `transform: scale(zoomLevel/100)` pattern used in `CardView` to ListView and EisenhowerView:
-- Read `zoomLevel` from `useAppContext()`
-- Wrap content in a container with `transform`, `transform-origin: top left`, and inverse width/height scaling
+Import `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem` and `ChevronDown` icon.
 
-### 4. Search Bar with Ctrl+F
+### Files Changed
 
-**Files:**
-- `src/context/AppContext.tsx` — add `searchQuery` state and filter logic
-- `src/components/SearchBar.tsx` — new component: an icon button (magnifying glass) in the Header that, when clicked, reveals a search input bar between FilterBar and the view. Ctrl+F toggles it.
-- `src/components/Header.tsx` — add the search icon button
-- `src/pages/Index.tsx` — render `<SearchBar />` between `<FilterBar />` and the view
-
-**Behavior:**
-- Icon in Header toggles `searchOpen` state
-- `Ctrl+F` / `Cmd+F` keyboard shortcut toggles search (with `e.preventDefault()` to override browser find)
-- Search bar slides in below FilterBar, pushing content down (no overlap)
-- Filters `filteredTasks` by matching `task.title`, `task.code`, `task.process`, and `task.observations` against the search query (case-insensitive)
-- ESC closes the search bar and clears the query
-
-### Summary of Files Changed
 | File | Change |
 |------|--------|
-| `src/components/ViewSwitcher.tsx` | Replace ToggleGroup with Select dropdown |
-| `src/components/views/EisenhowerView.tsx` | Add conceptual background colors + zoom |
-| `src/components/views/ListView.tsx` | Add zoom support |
-| `src/context/AppContext.tsx` | Add `searchQuery`, `setSearchQuery`, filter by search |
-| `src/components/SearchBar.tsx` | New search bar component |
-| `src/components/Header.tsx` | Add search icon button |
-| `src/pages/Index.tsx` | Render SearchBar between FilterBar and view |
+| `src/components/NewTaskDialog.tsx` | All three fixes |
 
