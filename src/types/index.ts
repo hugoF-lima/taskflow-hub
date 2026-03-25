@@ -47,7 +47,7 @@ export interface Task {
   id: string;
   code: string;
   title: string;
-  assigneeId: string;
+  assigneeIds: string[];
   deadline: string;
   urgency: UrgencyLevel;
   important: boolean;

@@ -47,9 +47,10 @@ export function ListView() {
             </TableHeader>
             <TableBody>
               {filteredTasks.map(task => {
-                const user = users.find(u => u.id === task.assigneeId);
-                const dept = departments.find(d => d.id === user?.departmentId);
-                const isHighlighted = sidebarMode === 'highlight' && selectedUserId === task.assigneeId;
+                const taskUsers = task.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
+                const firstUser = taskUsers[0];
+                const dept = departments.find(d => d.id === firstUser?.departmentId);
+                const isHighlighted = sidebarMode === 'highlight' && selectedUserId && task.assigneeIds.includes(selectedUserId);
                 const status = getTaskStatus(task);
 
                 return (
@@ -75,7 +76,7 @@ export function ListView() {
                         <span className={cn(task.completed && 'line-through')}>{task.title}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs">{user?.name}</TableCell>
+                    <TableCell className="text-xs">{taskUsers.map(u => u!.name).join(', ')}</TableCell>
                     <TableCell>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: `hsl(${dept?.color} / 0.1)`, color: `hsl(${dept?.color})` }}>
                         {dept?.name}

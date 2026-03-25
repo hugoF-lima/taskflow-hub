@@ -27,7 +27,7 @@ export function AppSidebar() {
   const { selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, filteredTasks } = useAppContext();
 
   const taskCountByUser = filteredTasks.reduce((acc, t) => {
-    acc[t.assigneeId] = (acc[t.assigneeId] || 0) + 1;
+    t.assigneeIds.forEach(uid => { acc[uid] = (acc[uid] || 0) + 1; });
     return acc;
   }, {} as Record<string, number>);
 

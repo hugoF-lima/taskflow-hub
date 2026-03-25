@@ -25,10 +25,12 @@ export function SignalExplanationPanel({ topic, count, onBack, onViewActivities 
     // Departments most involved
     const deptMap = new Map<string, number>();
     relevant.forEach((t) => {
-      const user = users.find((u) => u.id === t.assigneeId);
-      if (user) {
-        deptMap.set(user.departmentId, (deptMap.get(user.departmentId) || 0) + 1);
-      }
+      t.assigneeIds.forEach(uid => {
+        const user = users.find((u) => u.id === uid);
+        if (user) {
+          deptMap.set(user.departmentId, (deptMap.get(user.departmentId) || 0) + 1);
+        }
+      });
     });
     const departmentsInvolved = Array.from(deptMap.entries())
       .map(([id, cnt]) => ({

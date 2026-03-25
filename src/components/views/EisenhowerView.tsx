@@ -49,7 +49,7 @@ export function EisenhowerView() {
               </div>
               <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
                 {tasks.map(task => {
-                  const isHighlighted = sidebarMode === 'highlight' && selectedUserId === task.assigneeId;
+                  const isHighlighted = sidebarMode === 'highlight' && selectedUserId && task.assigneeIds.includes(selectedUserId);
                   return (
                     <div key={task.id} className={cn(isHighlighted && 'ring-1 ring-primary rounded-lg')}>
                       <TaskCard task={task} compact />

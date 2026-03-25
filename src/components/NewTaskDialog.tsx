@@ -13,7 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { CalendarIcon, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -26,8 +29,9 @@ interface NewTaskDialogProps {
 export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
   const { addTask } = useAppContext();
 
-  const [assigneeId, setAssigneeId] = useState('');
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [deadline, setDeadline] = useState<Date | undefined>();
+  const [deadlineTime, setDeadlineTime] = useState('18:00');
   const [noDeadline, setNoDeadline] = useState(false);
   const [title, setTitle] = useState('');
   const [urgency, setUrgency] = useState<UrgencyLevel>('normal');
@@ -36,8 +40,9 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
   const [important, setImportant] = useState(false);
 
   const resetForm = () => {
-    setAssigneeId('');
+    setAssigneeIds([]);
     setDeadline(undefined);
+    setDeadlineTime('18:00');
     setNoDeadline(false);
     setTitle('');
     setUrgency('normal');
@@ -46,12 +51,23 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
     setImportant(false);
   };
 
-  const handleSubmit = () => {
-    if (!assigneeId || (!deadline && !noDeadline) || !title || !process) return;
+  const buildDeadline = (): string => {
+    if (noDeadline) return '';
+    if (!deadline) return '';
+    const [h, m] = deadlineTime.split(':').map(Number);
+    const d = new Date(deadline);
+    d.setHours(h || 18, m || 0, 0, 0);
+    return d.toISOString();
+  };
+
+  const canSubmit = assigneeIds.length > 0 && (deadline || noDeadline) && title && process;
+
+  const handleSubmit = (keepOpen: boolean) => {
+    if (!canSubmit) return;
     addTask({
       title,
-      assigneeId,
-      deadline: noDeadline ? '' : (deadline?.toISOString() || ''),
+      assigneeIds,
+      deadline: buildDeadline(),
       urgency,
       important,
       process,
@@ -59,8 +75,19 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
       completed: false,
     });
     resetForm();
-    onOpenChange(false);
+    if (!keepOpen) onOpenChange(false);
   };
+
+  const toggleAssignee = (userId: string) => {
+    setAssigneeIds(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const selectedNames = assigneeIds
+    .map(id => users.find(u => u.id === id)?.name?.split(' ')[0])
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -71,30 +98,37 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
-          {/* Responsável */}
+          {/* Responsáveis (multi-select) */}
           <div className="grid gap-1.5">
-            <Label htmlFor="assignee" className="text-xs">Responsável</Label>
-            <Select value={assigneeId} onValueChange={setAssigneeId}>
-              <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
+            <Label className="text-xs">Responsáveis</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-9 justify-start text-left text-xs font-normal">
+                  {assigneeIds.length > 0 ? selectedNames : <span className="text-muted-foreground">Selecione...</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2 max-h-60 overflow-y-auto" align="start">
                 {users.map(u => {
                   const dept = departments.find(d => d.id === u.departmentId);
                   return (
-                    <SelectItem key={u.id} value={u.id} className="text-xs">
-                      {u.name} ({dept?.name})
-                    </SelectItem>
+                    <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
+                      <Checkbox
+                        checked={assigneeIds.includes(u.id)}
+                        onCheckedChange={() => toggleAssignee(u.id)}
+                      />
+                      <span>{u.name}</span>
+                      <span className="text-muted-foreground ml-auto text-[10px]">{dept?.name}</span>
+                    </label>
                   );
                 })}
-              </SelectContent>
-            </Select>
+              </PopoverContent>
+            </Popover>
           </div>
 
-          {/* Data */}
+          {/* Data + Hora */}
           <div className="grid gap-1.5">
-            <Label className="text-xs">Data de Entrega</Label>
-            <div className="flex items-center gap-3">
+            <Label className="text-xs">Data e Hora de Entrega</Label>
+            <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -116,6 +150,13 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
                   />
                 </PopoverContent>
               </Popover>
+              <Input
+                type="time"
+                value={deadlineTime}
+                onChange={e => setDeadlineTime(e.target.value)}
+                disabled={noDeadline}
+                className="h-9 w-24 text-xs"
+              />
               <div className="flex items-center gap-1.5">
                 <Checkbox id="noDeadline" checked={noDeadline} onCheckedChange={c => { setNoDeadline(c === true); if (c) setDeadline(undefined); }} />
                 <Label htmlFor="noDeadline" className="text-xs cursor-pointer whitespace-nowrap">Sem data</Label>
@@ -129,7 +170,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
             <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="Título da atividade" className="h-9 text-xs" />
           </div>
 
-          {/* Urgência + Processo side by side */}
+          {/* Urgência + Processo */}
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label className="text-xs">Urgência</Label>
@@ -179,9 +220,23 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button size="sm" onClick={handleSubmit} disabled={!assigneeId || (!deadline && !noDeadline) || !title || !process}>
-            Criar Atividade
-          </Button>
+          <div className="flex items-center">
+            <Button size="sm" onClick={() => handleSubmit(false)} disabled={!canSubmit} className="rounded-r-none">
+              Criar Atividade
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" disabled={!canSubmit} className="rounded-l-none border-l border-l-primary-foreground/30 px-1.5">
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleSubmit(true)} className="text-xs">
+                  Criar Atividade + Nova
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

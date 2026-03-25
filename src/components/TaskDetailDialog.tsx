@@ -18,7 +18,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -46,8 +45,9 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [title, setTitle] = useState('');
-  const [assigneeId, setAssigneeId] = useState('');
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [deadline, setDeadline] = useState<Date | undefined>();
+  const [deadlineTime, setDeadlineTime] = useState('18:00');
   const [noDeadline, setNoDeadline] = useState(false);
   const [urgency, setUrgency] = useState<UrgencyLevel>('normal');
   const [process, setProcess] = useState('');
@@ -62,10 +62,17 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   useEffect(() => {
     if (task && open) {
       setTitle(task.title);
-      setAssigneeId(task.assigneeId);
+      setAssigneeIds([...task.assigneeIds]);
       const hasDeadline = !!task.deadline;
       setNoDeadline(!hasDeadline);
-      setDeadline(hasDeadline ? new Date(task.deadline) : undefined);
+      if (hasDeadline) {
+        const d = new Date(task.deadline);
+        setDeadline(d);
+        setDeadlineTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+      } else {
+        setDeadline(undefined);
+        setDeadlineTime('18:00');
+      }
       setUrgency(task.urgency);
       setProcess(task.process);
       setObservations(task.observations || '');
@@ -76,14 +83,30 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
   if (!task) return null;
 
-  const user = users.find(u => u.id === task.assigneeId);
-  const dept = departments.find(d => d.id === user?.departmentId);
+  const taskUsers = task.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
+  const firstUser = taskUsers[0];
+  const dept = departments.find(d => d.id === firstUser?.departmentId);
+
+  const buildDeadline = (): string => {
+    if (noDeadline) return '';
+    if (!deadline) return task.deadline;
+    const [h, m] = deadlineTime.split(':').map(Number);
+    const d = new Date(deadline);
+    d.setHours(h || 18, m || 0, 0, 0);
+    return d.toISOString();
+  };
+
+  const toggleAssignee = (userId: string) => {
+    setAssigneeIds(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
 
   const handleSave = () => {
     updateTask(task.id, {
       title,
-      assigneeId,
-      deadline: noDeadline ? '' : (deadline?.toISOString() || task.deadline),
+      assigneeIds,
+      deadline: buildDeadline(),
       urgency,
       process,
       observations,
@@ -106,11 +129,15 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     setFbComment('');
   };
 
+  const selectedNames = assigneeIds
+    .map(id => users.find(u => u.id === id)?.name?.split(' ')[0])
+    .filter(Boolean)
+    .join(', ');
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0">
-          {/* Header */}
           <DialogHeader className="px-6 pt-5 pb-3">
             <div className="flex items-center justify-between gap-2 mr-8">
               <DialogTitle className="text-base leading-snug flex-1">
@@ -135,14 +162,13 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
               )}
             </div>
             <DialogDescription className="text-xs">
-              {task.code} · {user?.name} · {dept?.name}
+              {task.code} · {taskUsers.map(u => u!.name).join(', ')} · {dept?.name}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
             <div className="px-6 pb-6 space-y-5">
 
-              {/* View / Edit Section */}
               {editing ? (
                 <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
                   <div className="grid gap-1.5">
@@ -150,20 +176,30 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                     <Input value={title} onChange={e => setTitle(e.target.value)} className="h-8 text-xs" />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label className="text-xs font-medium">Responsável</Label>
-                    <Select value={assigneeId} onValueChange={setAssigneeId}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
+                    <Label className="text-xs font-medium">Responsáveis</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="h-8 justify-start text-left text-xs font-normal">
+                          {assigneeIds.length > 0 ? selectedNames : <span className="text-muted-foreground">Selecione...</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-2 max-h-60 overflow-y-auto" align="start">
                         {users.map(u => {
                           const d = departments.find(dp => dp.id === u.departmentId);
-                          return <SelectItem key={u.id} value={u.id} className="text-xs">{u.name} ({d?.name})</SelectItem>;
+                          return (
+                            <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
+                              <Checkbox checked={assigneeIds.includes(u.id)} onCheckedChange={() => toggleAssignee(u.id)} />
+                              <span>{u.name}</span>
+                              <span className="text-muted-foreground ml-auto text-[10px]">{d?.name}</span>
+                            </label>
+                          );
                         })}
-                      </SelectContent>
-                    </Select>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="grid gap-1.5">
-                    <Label className="text-xs font-medium">Data de Entrega</Label>
-                    <div className="flex items-center gap-3">
+                    <Label className="text-xs font-medium">Data e Hora de Entrega</Label>
+                    <div className="flex items-center gap-2">
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
@@ -179,6 +215,13 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                           <Calendar mode="single" selected={deadline} onSelect={setDeadline} initialFocus className="p-3 pointer-events-auto" />
                         </PopoverContent>
                       </Popover>
+                      <Input
+                        type="time"
+                        value={deadlineTime}
+                        onChange={e => setDeadlineTime(e.target.value)}
+                        disabled={noDeadline}
+                        className="h-8 w-24 text-xs"
+                      />
                       <div className="flex items-center gap-1.5">
                         <Checkbox id="noDeadlineEdit" checked={noDeadline} onCheckedChange={c => { setNoDeadline(c === true); if (c) setDeadline(undefined); }} />
                         <Label htmlFor="noDeadlineEdit" className="text-xs cursor-pointer whitespace-nowrap">Sem data</Label>
@@ -234,9 +277,10 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                     <div><span className="text-muted-foreground">Urgência:</span> <Badge variant="outline" className="text-[10px] ml-1">{urgencyConfig[task.urgency].label}</Badge></div>
                     <div><span className="text-muted-foreground">Processo:</span> <span className="ml-1 font-medium">{task.process}</span></div>
-                    <div><span className="text-muted-foreground">Prazo:</span> <span className="ml-1">{task.deadline ? format(new Date(task.deadline), 'dd/MM/yyyy', { locale: ptBR }) : 'Sem data'}</span></div>
+                    <div><span className="text-muted-foreground">Prazo:</span> <span className="ml-1">{task.deadline ? format(new Date(task.deadline), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'Sem data'}</span></div>
                     <div><span className="text-muted-foreground">Importante:</span> <span className="ml-1">{task.important ? 'Sim' : 'Não'}</span></div>
                     <div><span className="text-muted-foreground">Status:</span> <span className="ml-1">{task.completed ? 'Concluída' : 'Ativa'}</span></div>
+                    <div><span className="text-muted-foreground">Responsáveis:</span> <span className="ml-1">{taskUsers.map(u => u!.name).join(', ')}</span></div>
                   </div>
                   {task.observations && (
                     <div className="pt-2 border-t border-border/50">

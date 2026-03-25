@@ -83,12 +83,14 @@ export function ManagerDashboard() {
   const heatmapData = useMemo(() => {
     const matrix: Record<string, Record<string, number>> = {};
     filteredTasks.forEach((t) => {
-      const user = users.find((u) => u.id === t.assigneeId);
-      if (!user) return;
-      const deptId = user.departmentId;
-      if (!matrix[deptId]) matrix[deptId] = {};
-      t.feedback.forEach((fb) => {
-        matrix[deptId][fb.topic] = (matrix[deptId][fb.topic] || 0) + 1;
+      const taskUsers = t.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
+      taskUsers.forEach(user => {
+        if (!user) return;
+        const deptId = user.departmentId;
+        if (!matrix[deptId]) matrix[deptId] = {};
+        t.feedback.forEach((fb) => {
+          matrix[deptId][fb.topic] = (matrix[deptId][fb.topic] || 0) + 1;
+        });
       });
     });
     return matrix;

@@ -17,7 +17,7 @@ export function CardView() {
   const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDwelling = useRef(false);
 
-  const activeUsers = users.filter(u => filteredTasks.some(t => t.assigneeId === u.id));
+  const activeUsers = users.filter(u => filteredTasks.some(t => t.assigneeIds.includes(u.id)));
 
   const handleColumnEnter = useCallback((userId: string) => {
     dwellingColumnId.current = userId;
@@ -96,7 +96,7 @@ export function CardView() {
       >
         {activeUsers.map(user => {
           const dept = departments.find(d => d.id === user.departmentId);
-          const userTasks = filteredTasks.filter(t => t.assigneeId === user.id);
+          const userTasks = filteredTasks.filter(t => t.assigneeIds.includes(user.id));
           const isHighlighted = sidebarMode === 'highlight' && selectedUserId === user.id;
 
           return (
