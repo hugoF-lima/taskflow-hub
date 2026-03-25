@@ -11,7 +11,7 @@ export function CardView() {
   const columnScrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Dwell tracking: only enable vertical scroll after mouse stays in column for DWELL_MS
-  const DWELL_MS = 150;
+  const DWELL_MS = 800;
   const HORIZONTAL_SCROLL_SPEED = 1.5;
   const dwellingColumnId = useRef<string | null>(null);
   const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
