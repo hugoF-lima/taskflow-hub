@@ -52,7 +52,7 @@ type DrillDownState =
   | { type: "activities"; tasks: Task[]; title: string; parentState: DrillDownState };
 
 export function ManagerDashboard() {
-  const { filteredTasks, toggleSetting, setSelectedTask } = useAppContext();
+  const { filteredTasks, toggleSetting } = useAppContext();
   const [drillDown, setDrillDown] = useState<DrillDownState>({ type: "none" });
 
   const allFeedback = useMemo(() => filteredTasks.flatMap((t) => t.feedback), [filteredTasks]);
@@ -145,9 +145,11 @@ export function ManagerDashboard() {
     });
   }, []);
 
-  const handleOpenTask = useCallback((task: Task) => {
-    setSelectedTask(task);
-  }, [setSelectedTask]);
+  const handleOpenTask = useCallback((_task: Task) => {
+    // Task detail is opened via the main view's TaskCard/TaskDetailDialog
+    // Close dashboard so user can interact with the task
+    toggleSetting("managerDashboard");
+  }, [toggleSetting]);
 
   const showDrillPanel = drillDown.type !== "none";
 
