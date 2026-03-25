@@ -26,6 +26,10 @@ interface AppContextType {
   getTaskStatus: (task: Task) => TaskStatus;
   zoomLevel: number;
   setZoomLevel: (level: number) => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  searchOpen: boolean;
+  setSearchOpen: (open: boolean) => void;
 }
 
 const defaultFilters: AppFilters = {
@@ -57,6 +61,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     managerDashboard: false,
   });
   const [zoomLevel, setZoomLevel] = useState(100);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const setFilter = useCallback(<K extends keyof AppFilters>(key: K, value: AppFilters[K]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -179,9 +185,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       if (filters.dateRange.from && new Date(task.deadline) < filters.dateRange.from) return false;
       if (filters.dateRange.to && new Date(task.deadline) > filters.dateRange.to) return false;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const match = [task.title, task.code, task.process, task.observations ?? '']
+          .some(field => field.toLowerCase().includes(q));
+        if (!match) return false;
+      }
+
       return true;
     });
-  }, [tasks, filters, sidebarMode, selectedUserId, getTaskStatus]);
+  }, [tasks, filters, sidebarMode, selectedUserId, getTaskStatus, searchQuery]);
 
   const value = useMemo(() => ({
     tasks, filters, setFilter, resetFilters,
@@ -189,7 +203,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     viewMode, setViewMode, settings, toggleSetting,
     addFeedback, addTask, updateTask, deleteTask, toggleTaskCompletion, toggleTaskImportance,
     filteredTasks, getTaskStatus, zoomLevel, setZoomLevel,
-  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, addTask, updateTask, deleteTask, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel]);
+    searchQuery, setSearchQuery, searchOpen, setSearchOpen,
+  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, addTask, updateTask, deleteTask, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel, searchQuery, setSearchQuery, searchOpen, setSearchOpen]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
