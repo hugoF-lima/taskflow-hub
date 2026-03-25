@@ -176,7 +176,7 @@ export function ManagerDashboard() {
                   <BarChart data={perTopicTotal} onClick={handleBarClick}>
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={{ fontSize: 12, backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                     <Bar dataKey="count" fill="hsl(217,91%,60%)" radius={[4, 4, 0, 0]} className="cursor-pointer" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -191,7 +191,7 @@ export function ManagerDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                     <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={{ fontSize: 12, backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: 9 }} />
                     {topics.map((topic, i) => (
                       <Line
