@@ -9,6 +9,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,8 +24,8 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Pencil, Trash2, Send, MessageSquare, X, Check } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check } from 'lucide-react';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -42,7 +45,6 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Edit fields
   const [title, setTitle] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
   const [deadline, setDeadline] = useState<Date | undefined>();
@@ -52,13 +54,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [observations, setObservations] = useState('');
   const [important, setImportant] = useState(false);
 
-  // Feedback fields
   const [fbTopic, setFbTopic] = useState<FeedbackTopic | ''>('');
   const [fbType, setFbType] = useState<FeedbackType | ''>('');
   const [fbComment, setFbComment] = useState('');
   const [fbAnonymous, setFbAnonymous] = useState(true);
 
-  // Sync form when task changes or dialog opens
   useEffect(() => {
     if (task && open) {
       setTitle(task.title);
@@ -109,25 +109,30 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0">
           {/* Header */}
-          <DialogHeader className="px-5 pt-5 pb-3">
-            <div className="flex items-center justify-between gap-2">
+          <DialogHeader className="px-6 pt-5 pb-3">
+            <div className="flex items-center justify-between gap-2 mr-8">
               <DialogTitle className="text-base leading-snug flex-1">
                 {editing ? 'Editar Atividade' : task.title}
               </DialogTitle>
-              <div className="flex items-center gap-1">
-                {!editing && (
-                  <>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}>
-                      <Pencil className="h-3.5 w-3.5" />
+              {!editing && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setConfirmDelete(true)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </>
-                )}
-              </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditing(true)}>
+                      <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setConfirmDelete(true)} className="text-destructive focus:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             <DialogDescription className="text-xs">
               {task.code} · {user?.name} · {dept?.name}
@@ -135,17 +140,17 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           </DialogHeader>
 
           <ScrollArea className="flex-1 min-h-0">
-            <div className="px-5 pb-5 space-y-4">
+            <div className="px-6 pb-6 space-y-5">
 
               {/* View / Edit Section */}
               {editing ? (
-                <div className="space-y-3">
+                <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
                   <div className="grid gap-1.5">
-                    <Label className="text-xs">Assunto</Label>
+                    <Label className="text-xs font-medium">Assunto</Label>
                     <Input value={title} onChange={e => setTitle(e.target.value)} className="h-8 text-xs" />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label className="text-xs">Responsável</Label>
+                    <Label className="text-xs font-medium">Responsável</Label>
                     <Select value={assigneeId} onValueChange={setAssigneeId}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -157,7 +162,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                     </Select>
                   </div>
                   <div className="grid gap-1.5">
-                    <Label className="text-xs">Data de Entrega</Label>
+                    <Label className="text-xs font-medium">Data de Entrega</Label>
                     <div className="flex items-center gap-3">
                       <Popover>
                         <PopoverTrigger asChild>
@@ -182,7 +187,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="grid gap-1.5">
-                      <Label className="text-xs">Urgência</Label>
+                      <Label className="text-xs font-medium">Urgência</Label>
                       <Select value={urgency} onValueChange={v => setUrgency(v as UrgencyLevel)}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -198,7 +203,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                       </Select>
                     </div>
                     <div className="grid gap-1.5">
-                      <Label className="text-xs">Processo</Label>
+                      <Label className="text-xs font-medium">Processo</Label>
                       <Select value={process} onValueChange={setProcess}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -208,14 +213,14 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                     </div>
                   </div>
                   <div className="grid gap-1.5">
-                    <Label className="text-xs">Descrição / Observações</Label>
+                    <Label className="text-xs font-medium">Descrição / Observações</Label>
                     <Textarea value={observations} onChange={e => setObservations(e.target.value)} className="text-xs min-h-[50px] resize-none" />
                   </div>
                   <div className="flex items-center gap-2">
                     <Checkbox id="importantEdit" checked={important} onCheckedChange={c => setImportant(c === true)} />
                     <Label htmlFor="importantEdit" className="text-xs cursor-pointer">Importante</Label>
                   </div>
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex gap-2 justify-end pt-1">
                     <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditing(false)}>
                       <X className="h-3 w-3 mr-1" /> Cancelar
                     </Button>
@@ -225,18 +230,18 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2 text-xs">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                     <div><span className="text-muted-foreground">Urgência:</span> <Badge variant="outline" className="text-[10px] ml-1">{urgencyConfig[task.urgency].label}</Badge></div>
-                    <div><span className="text-muted-foreground">Processo:</span> <span className="ml-1">{task.process}</span></div>
+                    <div><span className="text-muted-foreground">Processo:</span> <span className="ml-1 font-medium">{task.process}</span></div>
                     <div><span className="text-muted-foreground">Prazo:</span> <span className="ml-1">{task.deadline ? format(new Date(task.deadline), 'dd/MM/yyyy', { locale: ptBR }) : 'Sem data'}</span></div>
                     <div><span className="text-muted-foreground">Importante:</span> <span className="ml-1">{task.important ? 'Sim' : 'Não'}</span></div>
                     <div><span className="text-muted-foreground">Status:</span> <span className="ml-1">{task.completed ? 'Concluída' : 'Ativa'}</span></div>
                   </div>
                   {task.observations && (
-                    <div className="pt-1">
+                    <div className="pt-2 border-t border-border/50">
                       <span className="text-muted-foreground">Observações:</span>
-                      <p className="mt-0.5 text-foreground">{task.observations}</p>
+                      <p className="mt-1 text-foreground leading-relaxed">{task.observations}</p>
                     </div>
                   )}
                 </div>
@@ -246,24 +251,24 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
               {/* Feedback History */}
               <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <MessageSquare className="h-3.5 w-3.5" />
+                <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-primary" />
                   Feedback ({task.feedback.length})
                 </p>
                 {task.feedback.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum feedback registrado</p>
+                  <p className="text-xs text-muted-foreground text-center py-6 bg-muted/20 rounded-lg">Nenhum feedback registrado</p>
                 ) : (
-                  <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                     {[...task.feedback].reverse().map(fb => (
-                      <div key={fb.id} className="p-2 rounded-md bg-muted/50 space-y-1">
+                      <div key={fb.id} className="rounded-lg border-l-2 border-l-primary/40 bg-muted/40 p-3 space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="text-[10px] h-4">{fb.topic}</Badge>
+                          <Badge variant="secondary" className="text-[10px] h-5 font-medium">{fb.topic}</Badge>
                           <span className="text-[10px] text-muted-foreground">
                             {format(new Date(fb.createdAt), "dd/MM/yy", { locale: ptBR })}
                           </span>
                         </div>
-                        <p className="text-xs">{fb.type}</p>
-                        {fb.comment && <p className="text-[11px] text-muted-foreground">{fb.comment}</p>}
+                        <p className="text-xs font-medium">{fb.type}</p>
+                        {fb.comment && <p className="text-[11px] text-muted-foreground leading-relaxed">{fb.comment}</p>}
                         <p className="text-[10px] text-muted-foreground/60">{fb.anonymous ? 'Anônimo' : 'Identificado'}</p>
                       </div>
                     ))}
@@ -275,44 +280,47 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
               {/* Add feedback form */}
               <div className="space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground">Adicionar Feedback</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
+                <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                  <Send className="h-4 w-4" />
+                  Adicionar Feedback
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
                     <Label className="text-xs text-muted-foreground">Tópico</Label>
                     <Select value={fbTopic} onValueChange={v => setFbTopic(v as FeedbackTopic)}>
-                      <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
                       <SelectContent>
-                        {topics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {topics.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
+                  <div className="grid gap-1.5">
                     <Label className="text-xs text-muted-foreground">Tipo</Label>
                     <Select value={fbType} onValueChange={v => setFbType(v as FeedbackType)}>
-                      <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
                       <SelectContent>
-                        {types.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {types.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-                <div>
+                <div className="grid gap-1.5">
                   <Label className="text-xs text-muted-foreground">Comentário (opcional)</Label>
                   <Textarea
                     value={fbComment}
                     onChange={e => setFbComment(e.target.value)}
                     maxLength={450}
-                    className="mt-1 text-xs resize-none h-14"
+                    className="text-xs resize-none h-16"
                     placeholder="Observações sobre o feedback..."
                   />
-                  <p className="text-[10px] text-muted-foreground text-right mt-0.5">{fbComment.length}/450</p>
+                  <p className="text-[10px] text-muted-foreground text-right">{fbComment.length}/450</p>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Switch id="anonDetail" checked={fbAnonymous} onCheckedChange={setFbAnonymous} />
                     <Label htmlFor="anonDetail" className="text-xs">Anônimo</Label>
                   </div>
-                  <Button size="sm" onClick={handleFeedbackSubmit} disabled={!fbTopic || !fbType} className="gap-1.5 h-7 text-xs">
+                  <Button size="sm" onClick={handleFeedbackSubmit} disabled={!fbTopic || !fbType} className="gap-1.5 h-8 text-xs px-4">
                     <Send className="h-3 w-3" /> Incluir
                   </Button>
                 </div>
