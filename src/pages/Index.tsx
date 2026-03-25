@@ -30,7 +30,7 @@ function DashboardContent() {
   );
 }
 
-export default function Index() {
+export default function Index() { // rebuild
   return (
     <AppProvider>
       <DashboardContent />
