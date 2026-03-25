@@ -168,11 +168,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       // Isolate mode
-      if (sidebarMode === 'isolate' && selectedUserId && task.assigneeId !== selectedUserId) return false;
+      if (sidebarMode === 'isolate' && selectedUserId && !task.assigneeIds.includes(selectedUserId)) return false;
 
       if (filters.departmentId) {
-        const user = users.find(u => u.id === task.assigneeId);
-        if (user && user.departmentId !== filters.departmentId) return false;
+        const taskUsers = task.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
+        if (taskUsers.length > 0 && !taskUsers.some(u => u!.departmentId === filters.departmentId)) return false;
       }
       if (filters.process && task.process !== filters.process) return false;
       if (filters.urgency && task.urgency !== filters.urgency) return false;

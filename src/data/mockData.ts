@@ -55,7 +55,7 @@ function makeTask(assigneeId: string, title: string, daysOffset: number, urgency
     id,
     code: `GAP-${String(taskId).padStart(4, '0')}`,
     title,
-    assigneeId,
+    assigneeIds: [assigneeId],
     deadline: deadline.toISOString(),
     urgency,
     important,

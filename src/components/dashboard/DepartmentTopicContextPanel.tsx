@@ -20,8 +20,8 @@ export function DepartmentTopicContextPanel({ departmentId, topic, onBack, onVie
 
   const analysis = useMemo(() => {
     const relevant = filteredTasks.filter((t) => {
-      const user = users.find((u) => u.id === t.assigneeId);
-      return user?.departmentId === departmentId && t.feedback.some((fb) => fb.topic === topic);
+      const taskUsers = t.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
+      return taskUsers.some(u => u!.departmentId === departmentId) && t.feedback.some((fb) => fb.topic === topic);
     });
 
     // Process clusters
