@@ -1,40 +1,61 @@
-## Plan: Polish TaskDetailDialog
 
-### Issues Identified
 
-1. Edit/Delete icons too close to the X close button — collapse them into an arrow button so the user may choose whether to delete or edit the task.
-2. No visual separation between sections (task details, feedback history, add feedback)
-3. Feedback items are flat/unstyled — reference shows card-like items with left border accent and better spacing
-4. "Adicionar Feedback" section title should be styled as a clickable-looking heading (bolder, colored)
-5. Overall layout needs better padding, section dividers, and visual hierarchy
+## Plan: View Switcher, Eisenhower Colors, Universal Zoom & Search Bar
 
-### Changes to `src/components/TaskDetailDialog.tsx`
+### 1. Replace ViewSwitcher with a Combobox
 
-**Header area:**
+**File:** `src/components/ViewSwitcher.tsx`
 
-- Add `mr-8` to the action buttons container so edit/delete icons sit well away from the dialog's built-in close button
+Replace the `ToggleGroup` with a `Select` (dropdown) showing each view as `Icon + Label`:
+- "Card View" + `LayoutGrid`
+- "List View" + `List`
+- "Eisenhower View" + `Grid2x2`
 
-**Task details section (view mode):**
+Each `SelectItem` renders the icon inline next to the text. The trigger shows the currently selected view's icon + name.
 
-- Wrap in a light background card (`bg-muted/30 rounded-lg p-3`) for visual grouping
+### 2. Eisenhower View Background Colors
 
-**Feedback history section:**
+**File:** `src/components/views/EisenhowerView.tsx`
 
-- Add a proper `Separator` with spacing before the section
-- Style "Feedback (N)" as a bolder heading with the `MessageSquare` icon
-- Style each feedback item with a left border accent (`border-l-2 border-primary/30`), slightly more padding, and a subtle background — matching the reference screenshot's card-like look with warm background
+When Eisenhower view is active, apply dim background tints to each quadrant reflecting the classic diagram:
+- **Urgent + Important** (top-left): warm red/orange tint
+- **Important + Not Urgent** (top-right): calm blue/green tint
+- **Urgent + Not Important** (bottom-left): yellow/amber tint
+- **Not Urgent + Not Important** (bottom-right): gray tint
 
-**"Adicionar Feedback" section:**
+Use inline `style` with low-opacity HSL backgrounds (already partially done — increase opacity slightly and ensure colors match the conceptual model).
 
-- Use a styled heading (text-sm font-semibold text-primary) matching the reference's blue "Adicionar Feedback" text
-- Add a clear `Separator` above it
-- Ensure form is fully visible by adjusting `ScrollArea` and giving `pb-6` at the bottom of scroll content
+### 3. Universal Zoom for All Views
 
-**General:**
+**Files:** `src/components/views/ListView.tsx`, `src/components/views/EisenhowerView.tsx`
 
-- Increase dialog max-width slightly for breathing room
-- Ensure `ScrollArea` fills properly so the feedback form is never cut off
+Apply the same zoom `transform: scale(zoomLevel/100)` pattern used in `CardView` to ListView and EisenhowerView:
+- Read `zoomLevel` from `useAppContext()`
+- Wrap content in a container with `transform`, `transform-origin: top left`, and inverse width/height scaling
 
-### Single file modified
+### 4. Search Bar with Ctrl+F
 
-- `src/components/TaskDetailDialog.tsx`
+**Files:**
+- `src/context/AppContext.tsx` — add `searchQuery` state and filter logic
+- `src/components/SearchBar.tsx` — new component: an icon button (magnifying glass) in the Header that, when clicked, reveals a search input bar between FilterBar and the view. Ctrl+F toggles it.
+- `src/components/Header.tsx` — add the search icon button
+- `src/pages/Index.tsx` — render `<SearchBar />` between `<FilterBar />` and the view
+
+**Behavior:**
+- Icon in Header toggles `searchOpen` state
+- `Ctrl+F` / `Cmd+F` keyboard shortcut toggles search (with `e.preventDefault()` to override browser find)
+- Search bar slides in below FilterBar, pushing content down (no overlap)
+- Filters `filteredTasks` by matching `task.title`, `task.code`, `task.process`, and `task.observations` against the search query (case-insensitive)
+- ESC closes the search bar and clears the query
+
+### Summary of Files Changed
+| File | Change |
+|------|--------|
+| `src/components/ViewSwitcher.tsx` | Replace ToggleGroup with Select dropdown |
+| `src/components/views/EisenhowerView.tsx` | Add conceptual background colors + zoom |
+| `src/components/views/ListView.tsx` | Add zoom support |
+| `src/context/AppContext.tsx` | Add `searchQuery`, `setSearchQuery`, filter by search |
+| `src/components/SearchBar.tsx` | New search bar component |
+| `src/components/Header.tsx` | Add search icon button |
+| `src/pages/Index.tsx` | Render SearchBar between FilterBar and view |
+
