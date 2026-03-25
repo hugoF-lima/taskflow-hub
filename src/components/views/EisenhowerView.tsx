@@ -8,30 +8,36 @@ function isUrgent(task: Task): boolean {
 }
 
 const quadrants = [
-  { key: 'ui', label: 'Urgente + Importante', desc: 'Fazer agora', color: 'urgency-critical24h', filter: (t: Task) => isUrgent(t) && t.important },
-  { key: 'ni', label: 'Importante + Não Urgente', desc: 'Agendar', color: 'primary', filter: (t: Task) => !isUrgent(t) && t.important },
-  { key: 'un', label: 'Urgente + Não Importante', desc: 'Delegar', color: 'urgency-medium', filter: (t: Task) => isUrgent(t) && !t.important },
-  { key: 'nn', label: 'Nem Urgente + Nem Importante', desc: 'Eliminar', color: 'urgency-report', filter: (t: Task) => !isUrgent(t) && !t.important },
+  { key: 'ui', label: 'Urgente + Importante', desc: 'Fazer agora', bg: 'hsla(0, 70%, 50%, 0.06)', border: 'hsla(0, 70%, 50%, 0.15)', filter: (t: Task) => isUrgent(t) && t.important },
+  { key: 'ni', label: 'Importante + Não Urgente', desc: 'Agendar', bg: 'hsla(210, 60%, 50%, 0.06)', border: 'hsla(210, 60%, 50%, 0.15)', filter: (t: Task) => !isUrgent(t) && t.important },
+  { key: 'un', label: 'Urgente + Não Importante', desc: 'Delegar', bg: 'hsla(40, 80%, 50%, 0.06)', border: 'hsla(40, 80%, 50%, 0.15)', filter: (t: Task) => isUrgent(t) && !t.important },
+  { key: 'nn', label: 'Nem Urgente + Nem Importante', desc: 'Eliminar', bg: 'hsla(0, 0%, 50%, 0.05)', border: 'hsla(0, 0%, 50%, 0.12)', filter: (t: Task) => !isUrgent(t) && !t.important },
 ] as const;
 
 export function EisenhowerView() {
-  const { filteredTasks, selectedUserId, sidebarMode } = useAppContext();
+  const { filteredTasks, selectedUserId, sidebarMode, zoomLevel } = useAppContext();
 
   return (
     <div className="flex-1 overflow-auto custom-scrollbar p-4">
-      <div className="grid grid-cols-2 grid-rows-2 gap-3 h-[calc(100vh-10rem)]">
+      <div
+        className="grid grid-cols-2 grid-rows-2 gap-3 origin-top-left transition-transform"
+        style={{
+          height: `calc((100vh - 10rem) * ${10000 / zoomLevel / 100})`,
+          transform: `scale(${zoomLevel / 100})`,
+          width: `${10000 / zoomLevel}%`,
+        }}
+      >
         {quadrants.map(q => {
           const tasks = filteredTasks.filter(q.filter);
           return (
             <div
               key={q.key}
-              className={cn(
-                'rounded-xl border p-3 flex flex-col overflow-hidden',
-                `bg-${q.color}/5 border-${q.color}/20`
-              )}
+              className="rounded-xl p-3 flex flex-col overflow-hidden"
               style={{
-                background: `hsl(var(--${q.color === 'primary' ? 'primary' : q.color.replace('urgency-', 'urgency-')}) / 0.04)`,
-                borderColor: `hsl(var(--${q.color === 'primary' ? 'primary' : q.color.replace('urgency-', 'urgency-')}) / 0.15)`,
+                background: q.bg,
+                borderWidth: 1,
+                borderStyle: 'solid',
+                borderColor: q.border,
               }}
             >
               <div className="flex items-center justify-between mb-2">

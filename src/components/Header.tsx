@@ -8,11 +8,11 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { BarChart3, Plus, ChevronDown, ClipboardList, FolderPlus } from 'lucide-react';
+import { BarChart3, Plus, ChevronDown, ClipboardList, FolderPlus, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function Header() {
-  const { settings, toggleSetting } = useAppContext();
+  const { settings, toggleSetting, searchOpen, setSearchOpen } = useAppContext();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
@@ -27,6 +27,14 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ViewSwitcher />
+          <Button
+            variant={searchOpen ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setSearchOpen(!searchOpen)}
+          >
+            <Search className="h-4 w-4" />
+          </Button>
           <Button
             variant={settings.managerDashboard ? 'default' : 'outline'}
             size="sm"
