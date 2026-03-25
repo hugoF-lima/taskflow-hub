@@ -58,7 +58,7 @@ export function ManagerDashboard() {
   const [tooltipLocked, setTooltipLocked] = useState(false);
   const [lockedPayload, setLockedPayload] = useState<any>(null);
 
-  const handleDotClick = useCallback((_data: any, _index: number, e: any) => {
+  const handleDotClick = useCallback((e: any) => {
     e?.stopPropagation?.();
     setTooltipLocked(true);
   }, []);
