@@ -1,30 +1,59 @@
-import { useMemo } from 'react';
-import { useAppContext } from '@/context/AppContext';
-import { users, departments } from '@/data/mockData';
-import { FeedbackTopic } from '@/types';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO, subDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useMemo } from "react";
+import { useAppContext } from "@/context/AppContext";
+import { users, departments } from "@/data/mockData";
+import { FeedbackTopic } from "@/types";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+  Legend,
+} from "recharts";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO, subDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-const topics: FeedbackTopic[] = ['Organização', 'Comunicação', 'Pro atividade', 'Prioridades', 'ICC', 'KISS', 'Reportar problemas'];
-const pieColors = ['hsl(217,91%,60%)', 'hsl(262,83%,58%)', 'hsl(25,95%,53%)', 'hsl(142,71%,45%)', 'hsl(174,72%,40%)', 'hsl(340,82%,52%)', 'hsl(45,93%,47%)'];
+const topics: FeedbackTopic[] = [
+  "Organização",
+  "Comunicação",
+  "Pro atividade",
+  "Prioridades",
+  "ICC",
+  "KISS",
+  "Reportar problemas",
+];
+const pieColors = [
+  "hsl(217,91%,60%)",
+  "hsl(262,83%,58%)",
+  "hsl(25,95%,53%)",
+  "hsl(142,71%,45%)",
+  "hsl(174,72%,40%)",
+  "hsl(340,82%,52%)",
+  "hsl(45,93%,47%)",
+];
 
 export function ManagerDashboard() {
   const { filteredTasks, toggleSetting } = useAppContext();
 
-  const allFeedback = useMemo(() => filteredTasks.flatMap(t => t.feedback), [filteredTasks]);
+  const allFeedback = useMemo(() => filteredTasks.flatMap((t) => t.feedback), [filteredTasks]);
 
   // Feedback per topic (Total) - Anonymized
   const perTopicTotal = useMemo(() => {
     const counts: Record<string, number> = {};
-    allFeedback.forEach(fb => { counts[fb.topic] = (counts[fb.topic] || 0) + 1; });
+    allFeedback.forEach((fb) => {
+      counts[fb.topic] = (counts[fb.topic] || 0) + 1;
+    });
     return topics
-      .map(t => ({ name: t, count: counts[t] || 0 }))
-      .filter(e => e.count > 0)
+      .map((t) => ({ name: t, count: counts[t] || 0 }))
+      .filter((e) => e.count > 0)
       .sort((a, b) => b.count - a.count);
   }, [allFeedback]);
 
@@ -32,13 +61,11 @@ export function ManagerDashboard() {
   const trendData = useMemo(() => {
     const today = new Date(2026, 2, 25); // Using mock "today" date from environment/mockData context
     const days = Array.from({ length: 15 }, (_, i) => subDays(today, 14 - i));
-    
-    return days.map(day => {
-      const data: any = { date: format(day, 'dd/MM', { locale: ptBR }) };
-      topics.forEach(topic => {
-        data[topic] = allFeedback.filter(fb => 
-          isSameDay(parseISO(fb.createdAt), day) && fb.topic === topic
-        ).length;
+
+    return days.map((day) => {
+      const data: any = { date: format(day, "dd/MM", { locale: ptBR }) };
+      topics.forEach((topic) => {
+        data[topic] = allFeedback.filter((fb) => isSameDay(parseISO(fb.createdAt), day) && fb.topic === topic).length;
       });
       return data;
     });
@@ -47,12 +74,12 @@ export function ManagerDashboard() {
   // Heatmap: Department x topic
   const heatmapData = useMemo(() => {
     const matrix: Record<string, Record<string, number>> = {};
-    filteredTasks.forEach(t => {
-      const user = users.find(u => u.id === t.assigneeId);
+    filteredTasks.forEach((t) => {
+      const user = users.find((u) => u.id === t.assigneeId);
       if (!user) return;
       const deptId = user.departmentId;
       if (!matrix[deptId]) matrix[deptId] = {};
-      t.feedback.forEach(fb => {
+      t.feedback.forEach((fb) => {
         matrix[deptId][fb.topic] = (matrix[deptId][fb.topic] || 0) + 1;
       });
     });
@@ -61,30 +88,34 @@ export function ManagerDashboard() {
 
   const maxHeat = useMemo(() => {
     let max = 0;
-    Object.values(heatmapData).forEach(row => Object.values(row).forEach(v => { if (v > max) max = v; }));
+    Object.values(heatmapData).forEach((row) =>
+      Object.values(row).forEach((v) => {
+        if (v > max) max = v;
+      }),
+    );
     return max || 1;
   }, [heatmapData]);
 
   // Recurring signals per topic (Anonymized)
   const recurringSignals = useMemo(() => {
     const topicCounts: Record<string, number> = {};
-    allFeedback.forEach(fb => {
+    allFeedback.forEach((fb) => {
       topicCounts[fb.topic] = (topicCounts[fb.topic] || 0) + 1;
     });
     return Object.entries(topicCounts)
       .map(([topic, count]) => ({ topic, count }))
-      .filter(s => s.count >= 3) // Signals with 3 or more occurrences
+      .filter((s) => s.count >= 3) // Signals with 3 or more occurrences
       .sort((a, b) => b.count - a.count);
   }, [allFeedback]);
 
-  const activeDepartments = departments.filter(d => heatmapData[d.id]);
+  const activeDepartments = departments.filter((d) => heatmapData[d.id]);
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
       <div className="absolute inset-4 bg-card rounded-2xl border shadow-2xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold text-foreground">Dashboard do Gestor (Anônimo)</h2>
-          <Button variant="ghost" size="icon" onClick={() => toggleSetting('managerDashboard')}>
+          <h2 className="text-lg font-bold text-foreground">Dashboard de Insights</h2>
+          <Button variant="ghost" size="icon" onClick={() => toggleSetting("managerDashboard")}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -115,12 +146,12 @@ export function ManagerDashboard() {
                   <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 9 }} />
                   {topics.map((topic, i) => (
-                    <Line 
-                      key={topic} 
-                      type="monotone" 
-                      dataKey={topic} 
-                      stroke={pieColors[i % pieColors.length]} 
-                      strokeWidth={2} 
+                    <Line
+                      key={topic}
+                      type="monotone"
+                      dataKey={topic}
+                      stroke={pieColors[i % pieColors.length]}
+                      strokeWidth={2}
                       dot={false}
                     />
                   ))}
@@ -136,15 +167,21 @@ export function ManagerDashboard() {
                   {/* Header row */}
                   <div className="grid gap-1" style={{ gridTemplateColumns: `140px repeat(${topics.length}, 1fr)` }}>
                     <div></div>
-                    {topics.map(t => (
-                      <div key={t} className="text-[10px] text-center text-muted-foreground font-medium px-1 truncate">{t}</div>
+                    {topics.map((t) => (
+                      <div key={t} className="text-[10px] text-center text-muted-foreground font-medium px-1 truncate">
+                        {t}
+                      </div>
                     ))}
                   </div>
                   {/* Data rows */}
-                  {activeDepartments.map(dept => (
-                    <div key={dept.id} className="grid gap-1 mt-1" style={{ gridTemplateColumns: `140px repeat(${topics.length}, 1fr)` }}>
+                  {activeDepartments.map((dept) => (
+                    <div
+                      key={dept.id}
+                      className="grid gap-1 mt-1"
+                      style={{ gridTemplateColumns: `140px repeat(${topics.length}, 1fr)` }}
+                    >
                       <div className="text-xs truncate flex items-center font-medium">{dept.name}</div>
-                      {topics.map(topic => {
+                      {topics.map((topic) => {
                         const count = heatmapData[dept.id]?.[topic] || 0;
                         const intensity = count / maxHeat;
                         return (
@@ -152,11 +189,12 @@ export function ManagerDashboard() {
                             key={topic}
                             className="h-8 rounded-md flex items-center justify-center text-[10px] font-medium transition-colors"
                             style={{
-                              background: count > 0 ? `hsl(217 91% 60% / ${0.1 + intensity * 0.6})` : 'hsl(var(--muted) / 0.3)',
-                              color: count > 0 ? `hsl(217 91% 60%)` : 'transparent',
+                              background:
+                                count > 0 ? `hsl(217 91% 60% / ${0.1 + intensity * 0.6})` : "hsl(var(--muted) / 0.3)",
+                              color: count > 0 ? `hsl(217 91% 60%)` : "transparent",
                             }}
                           >
-                            {count > 0 ? count : ''}
+                            {count > 0 ? count : ""}
                           </div>
                         );
                       })}
@@ -191,4 +229,3 @@ export function ManagerDashboard() {
     </div>
   );
 }
-
