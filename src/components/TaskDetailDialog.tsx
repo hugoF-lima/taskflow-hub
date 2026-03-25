@@ -1,0 +1,343 @@
+import { useState, useEffect } from 'react';
+import { useAppContext } from '@/context/AppContext';
+import { users, departments, allProcesses, urgencyConfig } from '@/data/mockData';
+import { Task, UrgencyLevel, FeedbackTopic, FeedbackType } from '@/types';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon, Pencil, Trash2, Send, MessageSquare, X, Check } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
+const topics: FeedbackTopic[] = ['Organização', 'Comunicação', 'Pro atividade', 'Prioridades', 'ICC', 'KISS', 'Reportar problemas'];
+const types: FeedbackType[] = ['precisa mais atenção', 'precisa um pouco mais de atenção', 'mandou bem!', 'cooperação'];
+
+interface TaskDetailDialogProps {
+  taskId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
+  const { tasks, addFeedback, updateTask, deleteTask } = useAppContext();
+  const task = tasks.find(t => t.id === taskId);
+
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Edit fields
+  const [title, setTitle] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [deadline, setDeadline] = useState<Date | undefined>();
+  const [noDeadline, setNoDeadline] = useState(false);
+  const [urgency, setUrgency] = useState<UrgencyLevel>('normal');
+  const [process, setProcess] = useState('');
+  const [observations, setObservations] = useState('');
+  const [important, setImportant] = useState(false);
+
+  // Feedback fields
+  const [fbTopic, setFbTopic] = useState<FeedbackTopic | ''>('');
+  const [fbType, setFbType] = useState<FeedbackType | ''>('');
+  const [fbComment, setFbComment] = useState('');
+  const [fbAnonymous, setFbAnonymous] = useState(true);
+
+  // Sync form when task changes or dialog opens
+  useEffect(() => {
+    if (task && open) {
+      setTitle(task.title);
+      setAssigneeId(task.assigneeId);
+      const hasDeadline = !!task.deadline;
+      setNoDeadline(!hasDeadline);
+      setDeadline(hasDeadline ? new Date(task.deadline) : undefined);
+      setUrgency(task.urgency);
+      setProcess(task.process);
+      setObservations(task.observations || '');
+      setImportant(task.important);
+      setEditing(false);
+    }
+  }, [task, open]);
+
+  if (!task) return null;
+
+  const user = users.find(u => u.id === task.assigneeId);
+  const dept = departments.find(d => d.id === user?.departmentId);
+
+  const handleSave = () => {
+    updateTask(task.id, {
+      title,
+      assigneeId,
+      deadline: noDeadline ? '' : (deadline?.toISOString() || task.deadline),
+      urgency,
+      process,
+      observations,
+      important,
+    });
+    setEditing(false);
+  };
+
+  const handleDelete = () => {
+    deleteTask(task.id);
+    setConfirmDelete(false);
+    onOpenChange(false);
+  };
+
+  const handleFeedbackSubmit = () => {
+    if (!fbTopic || !fbType) return;
+    addFeedback(taskId, { topic: fbTopic, type: fbType, comment: fbComment || undefined, anonymous: fbAnonymous, authorId: fbAnonymous ? undefined : 'u1' });
+    setFbTopic('');
+    setFbType('');
+    setFbComment('');
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
+          {/* Header */}
+          <DialogHeader className="px-5 pt-5 pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <DialogTitle className="text-base leading-snug flex-1">
+                {editing ? 'Editar Atividade' : task.title}
+              </DialogTitle>
+              <div className="flex items-center gap-1">
+                {!editing && (
+                  <>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setConfirmDelete(true)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+            <DialogDescription className="text-xs">
+              {task.code} · {user?.name} · {dept?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="px-5 pb-5 space-y-4">
+
+              {/* View / Edit Section */}
+              {editing ? (
+                <div className="space-y-3">
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Assunto</Label>
+                    <Input value={title} onChange={e => setTitle(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Responsável</Label>
+                    <Select value={assigneeId} onValueChange={setAssigneeId}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {users.map(u => {
+                          const d = departments.find(dp => dp.id === u.departmentId);
+                          return <SelectItem key={u.id} value={u.id} className="text-xs">{u.name} ({d?.name})</SelectItem>;
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Data de Entrega</Label>
+                    <div className="flex items-center gap-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={noDeadline}
+                            className={cn('h-8 flex-1 justify-start text-left text-xs font-normal', !deadline && !noDeadline && 'text-muted-foreground')}
+                          >
+                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                            {noDeadline ? 'Sem data' : deadline ? format(deadline, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar data'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={deadline} onSelect={setDeadline} initialFocus className="p-3 pointer-events-auto" />
+                        </PopoverContent>
+                      </Popover>
+                      <div className="flex items-center gap-1.5">
+                        <Checkbox id="noDeadlineEdit" checked={noDeadline} onCheckedChange={c => { setNoDeadline(c === true); if (c) setDeadline(undefined); }} />
+                        <Label htmlFor="noDeadlineEdit" className="text-xs cursor-pointer whitespace-nowrap">Sem data</Label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">Urgência</Label>
+                      <Select value={urgency} onValueChange={v => setUrgency(v as UrgencyLevel)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {(Object.entries(urgencyConfig) as [UrgencyLevel, { label: string; color: string }][]).map(([key, cfg]) => (
+                            <SelectItem key={key} value={key} className="text-xs">
+                              <span className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: `hsl(${cfg.color})` }} />
+                                {cfg.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">Processo</Label>
+                      <Select value={process} onValueChange={setProcess}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {allProcesses.map(p => <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Descrição / Observações</Label>
+                    <Textarea value={observations} onChange={e => setObservations(e.target.value)} className="text-xs min-h-[50px] resize-none" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox id="importantEdit" checked={important} onCheckedChange={c => setImportant(c === true)} />
+                    <Label htmlFor="importantEdit" className="text-xs cursor-pointer">Importante</Label>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditing(false)}>
+                      <X className="h-3 w-3 mr-1" /> Cancelar
+                    </Button>
+                    <Button size="sm" className="h-7 text-xs" onClick={handleSave}>
+                      <Check className="h-3 w-3 mr-1" /> Salvar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                    <div><span className="text-muted-foreground">Urgência:</span> <Badge variant="outline" className="text-[10px] ml-1">{urgencyConfig[task.urgency].label}</Badge></div>
+                    <div><span className="text-muted-foreground">Processo:</span> <span className="ml-1">{task.process}</span></div>
+                    <div><span className="text-muted-foreground">Prazo:</span> <span className="ml-1">{task.deadline ? format(new Date(task.deadline), 'dd/MM/yyyy', { locale: ptBR }) : 'Sem data'}</span></div>
+                    <div><span className="text-muted-foreground">Importante:</span> <span className="ml-1">{task.important ? 'Sim' : 'Não'}</span></div>
+                    <div><span className="text-muted-foreground">Status:</span> <span className="ml-1">{task.completed ? 'Concluída' : 'Ativa'}</span></div>
+                  </div>
+                  {task.observations && (
+                    <div className="pt-1">
+                      <span className="text-muted-foreground">Observações:</span>
+                      <p className="mt-0.5 text-foreground">{task.observations}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Feedback History */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Feedback ({task.feedback.length})
+                </p>
+                {task.feedback.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum feedback registrado</p>
+                ) : (
+                  <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                    {[...task.feedback].reverse().map(fb => (
+                      <div key={fb.id} className="p-2 rounded-md bg-muted/50 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="secondary" className="text-[10px] h-4">{fb.topic}</Badge>
+                          <span className="text-[10px] text-muted-foreground">
+                            {format(new Date(fb.createdAt), "dd/MM/yy", { locale: ptBR })}
+                          </span>
+                        </div>
+                        <p className="text-xs">{fb.type}</p>
+                        {fb.comment && <p className="text-[11px] text-muted-foreground">{fb.comment}</p>}
+                        <p className="text-[10px] text-muted-foreground/60">{fb.anonymous ? 'Anônimo' : 'Identificado'}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Add feedback form */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground">Adicionar Feedback</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Tópico</Label>
+                    <Select value={fbTopic} onValueChange={v => setFbTopic(v as FeedbackTopic)}>
+                      <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                      <SelectContent>
+                        {topics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Tipo</Label>
+                    <Select value={fbType} onValueChange={v => setFbType(v as FeedbackType)}>
+                      <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                      <SelectContent>
+                        {types.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Comentário (opcional)</Label>
+                  <Textarea
+                    value={fbComment}
+                    onChange={e => setFbComment(e.target.value)}
+                    maxLength={450}
+                    className="mt-1 text-xs resize-none h-14"
+                    placeholder="Observações sobre o feedback..."
+                  />
+                  <p className="text-[10px] text-muted-foreground text-right mt-0.5">{fbComment.length}/450</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch id="anonDetail" checked={fbAnonymous} onCheckedChange={setFbAnonymous} />
+                    <Label htmlFor="anonDetail" className="text-xs">Anônimo</Label>
+                  </div>
+                  <Button size="sm" onClick={handleFeedbackSubmit} disabled={!fbTopic || !fbType} className="gap-1.5 h-7 text-xs">
+                    <Send className="h-3 w-3" /> Incluir
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir atividade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir "{task.title}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState } from 'react';
-import { FeedbackModal } from './FeedbackModal';
+import { TaskDetailDialog } from './TaskDetailDialog';
 import { toast } from '@/hooks/use-toast';
 
 function getUrgencyClasses(urgency: UrgencyLevel) {
@@ -32,7 +32,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task, compact }: TaskCardProps) {
   const { toggleTaskCompletion, toggleTaskImportance, getTaskStatus, settings } = useAppContext();
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const user = users.find(u => u.id === task.assigneeId);
   const dept = departments.find(d => d.id === user?.departmentId);
   const status = getTaskStatus(task);
@@ -74,18 +74,19 @@ export function TaskCard({ task, compact }: TaskCardProps) {
             </div>
           </div>
 
-          {/* Title with description tooltip */}
+          {/* Title — click opens detail dialog, hover shows description */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <h3 className={cn('text-sm font-medium leading-snug mb-2 cursor-default', task.completed && 'line-through')}>
+              <h3
+                className={cn('text-sm font-medium leading-snug mb-2 cursor-pointer hover:text-primary transition-colors', task.completed && 'line-through')}
+                onClick={(e) => { e.stopPropagation(); setDetailOpen(true); }}
+              >
                 {task.title}
               </h3>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-[240px] text-xs">
               <p className="font-semibold mb-0.5">Descrição</p>
-              <p className="text-muted-foreground">
-                {task.observations || 'Sem descrição'}
-              </p>
+              <p className="text-muted-foreground">{task.observations || 'Sem descrição'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -93,7 +94,7 @@ export function TaskCard({ task, compact }: TaskCardProps) {
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              <span>{format(new Date(task.deadline), 'dd/MM')}</span>
+              <span>{task.deadline ? format(new Date(task.deadline), 'dd/MM') : 'Sem data'}</span>
             </div>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
               {task.process}
@@ -108,7 +109,7 @@ export function TaskCard({ task, compact }: TaskCardProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => { e.stopPropagation(); setFeedbackOpen(true); }}
+                  onClick={(e) => { e.stopPropagation(); setDetailOpen(true); }}
                   className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-primary"
                 >
                   <MessageSquare className="h-3 w-3" />
@@ -136,7 +137,7 @@ export function TaskCard({ task, compact }: TaskCardProps) {
           </div>
         </Card>
       </TooltipProvider>
-      <FeedbackModal taskId={task.id} open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+      <TaskDetailDialog taskId={task.id} open={detailOpen} onOpenChange={setDetailOpen} />
     </>
   );
 }

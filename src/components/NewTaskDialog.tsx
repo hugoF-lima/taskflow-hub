@@ -28,6 +28,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
 
   const [assigneeId, setAssigneeId] = useState('');
   const [deadline, setDeadline] = useState<Date | undefined>();
+  const [noDeadline, setNoDeadline] = useState(false);
   const [title, setTitle] = useState('');
   const [urgency, setUrgency] = useState<UrgencyLevel>('normal');
   const [process, setProcess] = useState('');
@@ -37,6 +38,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
   const resetForm = () => {
     setAssigneeId('');
     setDeadline(undefined);
+    setNoDeadline(false);
     setTitle('');
     setUrgency('normal');
     setProcess('');
@@ -45,11 +47,11 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
   };
 
   const handleSubmit = () => {
-    if (!assigneeId || !deadline || !title || !process) return;
+    if (!assigneeId || (!deadline && !noDeadline) || !title || !process) return;
     addTask({
       title,
       assigneeId,
-      deadline: deadline.toISOString(),
+      deadline: noDeadline ? '' : (deadline?.toISOString() || ''),
       urgency,
       important,
       process,
@@ -92,26 +94,33 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
           {/* Data */}
           <div className="grid gap-1.5">
             <Label className="text-xs">Data de Entrega</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn('h-9 justify-start text-left text-xs font-normal', !deadline && 'text-muted-foreground')}
-                >
-                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                  {deadline ? format(deadline, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar data'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={deadline}
-                  onSelect={setDeadline}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="flex items-center gap-3">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={noDeadline}
+                    className={cn('h-9 flex-1 justify-start text-left text-xs font-normal', !deadline && !noDeadline && 'text-muted-foreground')}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {noDeadline ? 'Sem data' : deadline ? format(deadline, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar data'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={deadline}
+                    onSelect={setDeadline}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              <div className="flex items-center gap-1.5">
+                <Checkbox id="noDeadline" checked={noDeadline} onCheckedChange={c => { setNoDeadline(c === true); if (c) setDeadline(undefined); }} />
+                <Label htmlFor="noDeadline" className="text-xs cursor-pointer whitespace-nowrap">Sem data</Label>
+              </div>
+            </div>
           </div>
 
           {/* Assunto */}
@@ -170,7 +179,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button size="sm" onClick={handleSubmit} disabled={!assigneeId || !deadline || !title || !process}>
+          <Button size="sm" onClick={handleSubmit} disabled={!assigneeId || (!deadline && !noDeadline) || !title || !process}>
             Criar Atividade
           </Button>
         </DialogFooter>
