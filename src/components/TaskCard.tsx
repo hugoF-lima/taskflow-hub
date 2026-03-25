@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { MessageSquare, Star, Check, Calendar } from 'lucide-react';
+import { MessageSquare, Star, Check, Calendar, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -33,9 +33,11 @@ interface TaskCardProps {
 export function TaskCard({ task, compact }: TaskCardProps) {
   const { toggleTaskCompletion, toggleTaskImportance, getTaskStatus, settings } = useAppContext();
   const [detailOpen, setDetailOpen] = useState(false);
-  const user = users.find(u => u.id === task.assigneeId);
-  const dept = departments.find(d => d.id === user?.departmentId);
+  const taskUsers = task.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
+  const firstUser = taskUsers[0];
+  const dept = departments.find(d => d.id === firstUser?.departmentId);
   const status = getTaskStatus(task);
+  const isOverdue = status === 'overdue' && !task.completed;
   const lastFeedback = task.feedback.length > 0 ? task.feedback[task.feedback.length - 1] : null;
 
   const handleComplete = () => {
@@ -56,14 +58,19 @@ export function TaskCard({ task, compact }: TaskCardProps) {
           className={cn(
             'p-3 cursor-pointer transition-all hover:shadow-md border',
             task.completed && 'opacity-60',
-            status === 'overdue' && !task.completed && 'border-urgency-critical24h/40',
+            isOverdue && 'border-l-[3px] border-l-destructive border-destructive/40 bg-destructive/5',
           )}
         >
           {/* Urgency badge + important */}
           <div className="flex items-center justify-between gap-2 mb-2">
-            <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-5 border', getUrgencyClasses(task.urgency))}>
-              {urgencyConfig[task.urgency].label}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-5 border', getUrgencyClasses(task.urgency))}>
+                {urgencyConfig[task.urgency].label}
+              </Badge>
+              {isOverdue && (
+                <AlertTriangle className="h-3.5 w-3.5 text-destructive animate-pulse" />
+              )}
+            </div>
             <div className="flex items-center gap-1">
               <button onClick={(e) => { e.stopPropagation(); toggleTaskImportance(task.id); }} className="p-0.5">
                 <Star className={cn('h-3.5 w-3.5', task.important ? 'fill-urgency-medium text-urgency-medium' : 'text-muted-foreground/40')} />
@@ -74,7 +81,7 @@ export function TaskCard({ task, compact }: TaskCardProps) {
             </div>
           </div>
 
-          {/* Title — click opens detail dialog, hover shows description */}
+          {/* Title */}
           <Tooltip>
             <TooltipTrigger asChild>
               <h3
@@ -90,11 +97,18 @@ export function TaskCard({ task, compact }: TaskCardProps) {
             </TooltipContent>
           </Tooltip>
 
+          {/* Assignees (show multiple) */}
+          {taskUsers.length > 1 && (
+            <div className="text-[10px] text-muted-foreground mb-1.5 truncate">
+              {taskUsers.map(u => u!.name.split(' ')[0]).join(', ')}
+            </div>
+          )}
+
           {/* Meta row */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
+            <div className={cn('flex items-center gap-1', isOverdue && 'text-destructive font-medium')}>
               <Calendar className="h-3 w-3" />
-              <span>{task.deadline ? format(new Date(task.deadline), 'dd/MM') : 'Sem data'}</span>
+              <span>{task.deadline ? format(new Date(task.deadline), 'dd/MM HH:mm') : 'Sem data'}</span>
             </div>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
               {task.process}
