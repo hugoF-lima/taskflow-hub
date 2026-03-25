@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { ViewSwitcher } from './ViewSwitcher';
-import { SettingsPopover } from './SettingsPopover';
+import { UserAvatarMenu } from './UserAvatarMenu';
 import { NewTaskDialog } from './NewTaskDialog';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -65,7 +65,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <SettingsPopover />
+          <UserAvatarMenu />
         </div>
       </header>
 
