@@ -17,6 +17,7 @@ interface AppContextType {
   settings: AppSettings;
   toggleSetting: (key: keyof AppSettings) => void;
   addFeedback: (taskId: string, feedback: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>) => void;
   toggleTaskCompletion: (taskId: string) => boolean;
   toggleTaskImportance: (taskId: string) => void;
   filteredTasks: Task[];
