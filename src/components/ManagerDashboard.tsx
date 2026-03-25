@@ -54,6 +54,28 @@ type DrillDownState =
 export function ManagerDashboard() {
   const { filteredTasks, toggleSetting } = useAppContext();
   const [drillDown, setDrillDown] = useState<DrillDownState>({ type: "none" });
+  const [hoveredTopic, setHoveredTopic] = useState<string | null>(null);
+
+  const CustomTrendTooltip = useCallback(({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="rounded-lg border border-border bg-card p-2 text-xs shadow-xl"
+           style={{ color: 'hsl(var(--foreground))' }}>
+        <p className="font-medium mb-1">{label}</p>
+        {payload.map((entry: any) => (
+          <div key={entry.dataKey}
+               onMouseEnter={() => setHoveredTopic(entry.dataKey)}
+               onMouseLeave={() => setHoveredTopic(null)}
+               className="flex items-center gap-2 px-1 py-0.5 rounded cursor-default transition-opacity"
+               style={{ opacity: hoveredTopic && hoveredTopic !== entry.dataKey ? 0.3 : 1 }}>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: entry.color }} />
+            <span>{entry.dataKey}</span>
+            <span className="ml-auto font-medium">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }, [hoveredTopic]);
 
   const allFeedback = useMemo(() => filteredTasks.flatMap((t) => t.feedback), [filteredTasks]);
 
@@ -191,7 +213,8 @@ export function ManagerDashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                     <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                    <Tooltip contentStyle={{ fontSize: 12, backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
+                    <Tooltip offset={16} content={<CustomTrendTooltip />}
+                      isAnimationActive={false} allowEscapeViewBox={{ x: true, y: true }} />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: 9 }} />
                     {topics.map((topic, i) => (
                       <Line
@@ -201,6 +224,7 @@ export function ManagerDashboard() {
                         stroke={pieColors[i % pieColors.length]}
                         strokeWidth={2}
                         dot={false}
+                        strokeOpacity={hoveredTopic === null || hoveredTopic === topic ? 1 : 0.15}
                       />
                     ))}
                   </LineChart>
