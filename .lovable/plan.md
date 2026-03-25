@@ -1,33 +1,32 @@
 
 
-## Plan: Fix Sidebar Double-Click Index Bug & "Mostrar todos" Layout Shift
+## Plan: Fix Dark Theme for Recharts Tooltips in ManagerDashboard
 
-### 1. Fix Double-Click Selecting Wrong User
+### Problem
 
-The double-click fires two click events first (selecting/highlighting a user via `handleUserClick`), which can change `selectedUserId` before `handleUserDoubleClick` runs. The single-click handler toggles highlight mode — so by the time the double-click fires, the state may have shifted.
+The `<Tooltip>` components from Recharts on lines 179 and 194 only set `contentStyle={{ fontSize: 12 }}`, which leaves the tooltip with Recharts' default white background and dark text — ignoring the app's dark theme.
 
-**Fix:** Use a click delay pattern. On `onClick`, set a short timeout (~250ms). If a double-click arrives within that window, cancel the timeout and only run `handleUserDoubleClick`. This prevents `handleUserClick` from interfering.
+### Fix
 
-**File:** `src/components/AppSidebar.tsx`
-- Import `useRef, useCallback` from React
-- Add a `clickTimerRef = useRef<NodeJS.Timeout | null>(null)`
-- On `onClick`: clear any existing timer, set a new 250ms timeout that calls `handleUserClick(user.id)`
-- On `onDoubleClick`: clear the timer, call `handleUserDoubleClick(user.id)`
+**File:** `src/components/ManagerDashboard.tsx`
 
-### 2. Fix "Mostrar todos" Causing Layout Shift
+Update both `<Tooltip>` `contentStyle` props to use the app's CSS variables for background, text color, and border:
 
-Currently the "Mostrar todos" button is a separate block element inside `SidebarHeader` that pushes content down when it appears.
+```tsx
+<Tooltip contentStyle={{
+  fontSize: 12,
+  backgroundColor: 'hsl(var(--card))',
+  border: '1px solid hsl(var(--border))',
+  borderRadius: '8px',
+  color: 'hsl(var(--foreground))',
+}} />
+```
 
-**Fix:** Place "Mostrar todos" inline next to the "Equipe" label in the same flex row, using `ml-auto` to push it to the right. It only renders when `sidebarMode !== 'none'`.
-
-**File:** `src/components/AppSidebar.tsx`
-- Move the `Button` inside the same `<div>` that contains the `Users` icon and "Equipe" label
-- Add `ml-auto` to the button so it aligns right
-- Remove the separate conditional block below
+Apply this to both the BarChart tooltip (line 179) and the LineChart tooltip (line 194).
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/AppSidebar.tsx` | Click/double-click disambiguation + inline "Mostrar todos" |
+| `src/components/ManagerDashboard.tsx` | Theme-aware `contentStyle` on both `<Tooltip>` components |
 
