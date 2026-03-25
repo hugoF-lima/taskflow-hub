@@ -151,6 +151,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const updateTask = useCallback((taskId: string, updates: Partial<Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>>) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
+  }, []);
+
+  const deleteTask = useCallback((taskId: string) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+  }, []);
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       // Isolate mode
