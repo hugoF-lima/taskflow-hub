@@ -326,7 +326,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
