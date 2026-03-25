@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react';
 import { users, departments } from '@/data/mockData';
 import { useAppContext } from '@/context/AppContext';
 import {
@@ -25,6 +26,23 @@ function getDeptColor(deptId: string) {
 
 export function AppSidebar() {
   const { selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, filteredTasks } = useAppContext();
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const onItemClick = useCallback((userId: string) => {
+    if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    clickTimerRef.current = setTimeout(() => {
+      handleUserClick(userId);
+      clickTimerRef.current = null;
+    }, 250);
+  }, [handleUserClick]);
+
+  const onItemDoubleClick = useCallback((userId: string) => {
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+    handleUserDoubleClick(userId);
+  }, [handleUserDoubleClick]);
 
   const taskCountByUser = filteredTasks.reduce((acc, t) => {
     t.assigneeIds.forEach(uid => { acc[uid] = (acc[uid] || 0) + 1; });
@@ -39,17 +57,17 @@ export function AppSidebar() {
           <span className="text-sm font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
             Equipe
           </span>
+          {sidebarMode !== 'none' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearUserSelection}
+              className="ml-auto text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent h-7 group-data-[collapsible=icon]:hidden"
+            >
+              Mostrar todos
+            </Button>
+          )}
         </div>
-        {sidebarMode !== 'none' && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearUserSelection}
-            className="text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent h-7 group-data-[collapsible=icon]:hidden"
-          >
-            Mostrar todos
-          </Button>
-        )}
       </SidebarHeader>
       <SidebarContent className="custom-scrollbar">
         <SidebarMenu>
@@ -62,10 +80,10 @@ export function AppSidebar() {
               <SidebarMenuItem key={user.id}>
                 <SidebarMenuButton
                   isActive={isSelected}
-                  onClick={() => handleUserClick(user.id)}
+                  onClick={() => onItemClick(user.id)}
                   onDoubleClick={(e) => {
                     e.preventDefault();
-                    handleUserDoubleClick(user.id);
+                    onItemDoubleClick(user.id);
                   }}
                   tooltip={user.name}
                   className={cn(
@@ -85,7 +103,6 @@ export function AppSidebar() {
                         {getInitials(user.name)}
                       </AvatarFallback>
                     </Avatar>
-                    {/* Department accent border */}
                     <div
                       className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 h-[3px] w-5 rounded-full"
                       style={{ background: `hsl(${getDeptColor(user.departmentId)})` }}
