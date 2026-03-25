@@ -135,6 +135,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, important: !t.important } : t));
   }, []);
 
+  const addTask = useCallback((taskData: Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>) => {
+    setTasks(prev => {
+      const nextNum = prev.length + 1;
+      const newTask: Task = {
+        ...taskData,
+        id: `t${Date.now()}`,
+        code: `GAP-${String(nextNum).padStart(4, '0')}`,
+        createdAt: new Date().toISOString(),
+        feedback: [],
+      };
+      return [...prev, newTask];
+    });
+  }, []);
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       // Isolate mode
@@ -163,9 +177,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     tasks, filters, setFilter, resetFilters,
     selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection,
     viewMode, setViewMode, settings, toggleSetting,
-    addFeedback, toggleTaskCompletion, toggleTaskImportance,
+    addFeedback, addTask, toggleTaskCompletion, toggleTaskImportance,
     filteredTasks, getTaskStatus, zoomLevel, setZoomLevel,
-  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel]);
+  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, addTask, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
