@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { CalendarIcon, Paperclip, X } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { CalendarIcon, ChevronDown, Paperclip, X } from 'lucide-react';
 import { format, startOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -156,23 +156,21 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64 p-0" align="start">
-                <ScrollArea className="h-60">
-                  <div className="p-2">
-                    {users.map(u => {
-                      const dept = departments.find(d => d.id === u.departmentId);
-                      return (
-                        <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
-                          <Checkbox
-                            checked={assigneeIds.includes(u.id)}
-                            onCheckedChange={() => toggleAssignee(u.id)}
-                          />
-                          <span>{getDisplayName(u.name)}</span>
-                          <span className="text-muted-foreground ml-auto text-[10px]">{dept?.name}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
+                <div className="overflow-y-auto max-h-60 p-2">
+                  {users.map(u => {
+                    const dept = departments.find(d => d.id === u.departmentId);
+                    return (
+                      <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
+                        <Checkbox
+                          checked={assigneeIds.includes(u.id)}
+                          onCheckedChange={() => toggleAssignee(u.id)}
+                        />
+                        <span>{getDisplayName(u.name)}</span>
+                        <span className="text-muted-foreground ml-auto text-[10px]">{dept?.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </PopoverContent>
             </Popover>
           </div>
@@ -209,6 +207,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
               </Popover>
               <Input
                 type="time"
+                lang="pt-BR"
                 value={deadlineTime}
                 onChange={e => setDeadlineTime(e.target.value)}
                 disabled={noDeadline}
@@ -316,20 +315,29 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
               size="sm"
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className={cn(!createAndNewMode && 'rounded-r-none')}
+              className="rounded-r-none"
             >
               {buttonLabel}
             </Button>
-            {!createAndNewMode && (
-              <Button
-                size="sm"
-                variant="default"
-                className="rounded-l-none border-l border-l-primary-foreground/30 px-1.5"
-                onClick={() => setCreateAndNewMode(true)}
-              >
-                <span className="text-[10px]">+ Nova</span>
-              </Button>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="rounded-l-none border-l border-l-primary-foreground/30 px-1.5"
+                >
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[100px]">
+                <DropdownMenuItem
+                  className="text-xs cursor-pointer"
+                  onClick={() => setCreateAndNewMode(prev => !prev)}
+                >
+                  {createAndNewMode ? 'Criar apenas' : '+ Nova'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </DialogFooter>
       </DialogContent>
