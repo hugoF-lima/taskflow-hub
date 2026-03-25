@@ -45,21 +45,23 @@ export function CardView() {
       const activeColId = dwellingColumnId.current;
       const colEl = activeColId ? columnScrollRefs.current[activeColId] : null;
 
-      // If dwelling in a column and it has scroll room, let vertical scroll happen
+      // If dwelling in a column, capture all scroll (vertical or locked at boundary)
       if (isDwelling.current && colEl) {
+        e.preventDefault();
         const { scrollTop, scrollHeight, clientHeight } = colEl;
         const atTop = scrollTop <= 0;
         const atBottom = Math.abs(scrollTop + clientHeight - scrollHeight) < 1;
         const scrollingUp = e.deltaY < 0;
         const scrollingDown = e.deltaY > 0;
 
+        // Scroll the column if there's room; otherwise lock (do nothing)
         if ((scrollingDown && !atBottom) || (scrollingUp && !atTop)) {
-          // Column has room — let browser handle vertically
-          return;
+          colEl.scrollTop += e.deltaY;
         }
+        return;
       }
 
-      // Otherwise redirect to horizontal scroll
+      // Default: horizontal board scroll
       e.preventDefault();
       container.scrollLeft += e.deltaY * HORIZONTAL_SCROLL_SPEED;
     };
