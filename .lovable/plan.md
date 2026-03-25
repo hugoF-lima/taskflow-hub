@@ -1,47 +1,40 @@
+## Plan: Polish TaskDetailDialog
 
+### Issues Identified
 
-## Plan: Three Changes
+1. Edit/Delete icons too close to the X close button — collapse them into an arrow button so the user may choose whether to delete or edit the task.
+2. No visual separation between sections (task details, feedback history, add feedback)
+3. Feedback items are flat/unstyled — reference shows card-like items with left border accent and better spacing
+4. "Adicionar Feedback" section title should be styled as a clickable-looking heading (bolder, colored)
+5. Overall layout needs better padding, section dividers, and visual hierarchy
 
-### 1. "Nova Atividade" Dropdown + Task Creation Dialog
+### Changes to `src/components/TaskDetailDialog.tsx`
 
-**Header.tsx**: Replace the single "Nova Atividade" button with a `DropdownMenu` containing two items: "Nova Atividade" and "Novo Processo". Both open the same dialog for now.
+**Header area:**
 
-**New file `src/components/NewTaskDialog.tsx`**: A Dialog with fields matching the screenshot reference:
-- **Codigo** — auto-generated, read-only
-- **Responsável** — Select dropdown populated from `users` list (showing "NAME (DEPARTMENT)")
-- **Data** — Date picker for deadline
-- **Assunto** — Text input for task title
-- **Urgência/Prioridade** — Select with color-coded urgency levels (Normal, Média, Crítica, Crítica 24h, Reportar)
-- **Processo** — Select from existing process list
-- **Descrição/Observações** — Textarea
-- **Importante** — Checkbox toggle
+- Add `mr-8` to the action buttons container so edit/delete icons sit well away from the dialog's built-in close button
 
-On submit, calls a new `addTask` function added to `AppContext`.
+**Task details section (view mode):**
 
-**AppContext.tsx**: Add `addTask(task: Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>)` that generates an id/code and appends to the tasks array.
+- Wrap in a light background card (`bg-muted/30 rounded-lg p-3`) for visual grouping
 
-### 2. Separate Tooltips on TaskCard
+**Feedback history section:**
 
-**TaskCard.tsx** — Restructure hover behavior:
-- **Title hover** → Tooltip (or HoverCard) showing `task.observations` / description. If empty, show "Sem descrição". Remove the current whole-card HoverCard wrapper.
-- **MessageSquare icon hover** → Wrap the feedback button in its own `Tooltip` or `HoverCard` showing latest feedback summary (the content currently on the whole card hover).
+- Add a proper `Separator` with spacing before the section
+- Style "Feedback (N)" as a bolder heading with the `MessageSquare` icon
+- Style each feedback item with a left border accent (`border-l-2 border-primary/30`), slightly more padding, and a subtle background — matching the reference screenshot's card-like look with warm background
 
-This means the card itself no longer has a wrapping HoverCard. Instead, two separate inline tooltips on specific elements.
+**"Adicionar Feedback" section:**
 
-### 3. Fix CardView Scroll Behavior
+- Use a styled heading (text-sm font-semibold text-primary) matching the reference's blue "Adicionar Feedback" text
+- Add a clear `Separator` above it
+- Ensure form is fully visible by adjusting `ScrollArea` and giving `pb-6` at the bottom of scroll content
 
-**Problem**: The current wheel handler immediately redirects to horizontal scroll when a column hits its scroll boundary, causing erratic jumping.
+**General:**
 
-**Solution in `CardView.tsx`**: Introduce a "mouse dwell" approach:
-- Track which column the mouse is currently hovering over using `mouseenter`/`mouseleave` on each column's scroll container.
-- Only allow vertical scrolling within a column after the mouse has dwelled inside it for ~150ms (use a ref timer).
-- When mouse is NOT dwelling in any column (or hasn't been long enough), all wheel events go to horizontal scroll on the outer container.
-- When dwelling IS active and the column has vertical scroll room, let vertical scroll happen naturally. Only redirect to horizontal when the column is at its scroll boundary AND a short debounce timer (e.g. 100ms of no further scroll) passes — preventing the immediate "bounce" to horizontal.
+- Increase dialog max-width slightly for breathing room
+- Ensure `ScrollArea` fills properly so the feedback form is never cut off
 
-### Files Modified
-- `src/components/Header.tsx` — Dropdown menu replacing single button
-- `src/components/NewTaskDialog.tsx` — New file, creation form dialog
-- `src/context/AppContext.tsx` — Add `addTask` to context
-- `src/components/TaskCard.tsx` — Split tooltips (title → description, icon → feedback)
-- `src/components/views/CardView.tsx` — Rewrite scroll logic with dwell timer
+### Single file modified
 
+- `src/components/TaskDetailDialog.tsx`
