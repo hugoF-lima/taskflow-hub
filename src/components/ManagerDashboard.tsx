@@ -55,17 +55,50 @@ export function ManagerDashboard() {
   const { filteredTasks, toggleSetting } = useAppContext();
   const [drillDown, setDrillDown] = useState<DrillDownState>({ type: "none" });
   const [hoveredTopic, setHoveredTopic] = useState<string | null>(null);
+  const [tooltipLocked, setTooltipLocked] = useState(false);
+  const [lockedPayload, setLockedPayload] = useState<any>(null);
+
+  const handleDotClick = useCallback((_data: any, _index: number, e: any) => {
+    e?.stopPropagation?.();
+    setTooltipLocked(true);
+  }, []);
+
+  const handleChartClick = useCallback(() => {
+    if (tooltipLocked) {
+      setTooltipLocked(false);
+      setLockedPayload(null);
+      setHoveredTopic(null);
+    }
+  }, [tooltipLocked]);
 
   const CustomTrendTooltip = useCallback(({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
+    // When locked, use locked data; otherwise use live data
+    const displayPayload = tooltipLocked && lockedPayload ? lockedPayload.payload : payload;
+    const displayLabel = tooltipLocked && lockedPayload ? lockedPayload.label : label;
+    const isActive = tooltipLocked || active;
+
+    if (!isActive || !displayPayload?.length) return null;
+
+    // Store payload when tooltip becomes active for locking
+    if (active && payload?.length && !tooltipLocked) {
+      // Will be captured on click
+    }
+
     return (
-      <div className="rounded-lg border border-border bg-card p-2 text-xs shadow-xl"
-           style={{ color: 'hsl(var(--foreground))' }}>
-        <p className="font-medium mb-1">{label}</p>
-        {payload.map((entry: any) => (
+      <div
+        className="rounded-lg border border-border bg-card p-2 text-xs shadow-xl"
+        style={{ color: 'hsl(var(--foreground))', pointerEvents: tooltipLocked ? 'auto' : 'none' }}
+        onMouseLeave={() => {
+          if (tooltipLocked) {
+            setHoveredTopic(null);
+          }
+        }}
+      >
+        <p className="font-medium mb-1">{displayLabel}</p>
+        {displayPayload.map((entry: any) => (
           <div key={entry.dataKey}
-               onMouseEnter={() => setHoveredTopic(entry.dataKey)}
-               onMouseLeave={() => setHoveredTopic(null)}
+               onMouseEnter={() => tooltipLocked && setHoveredTopic(entry.dataKey)}
+               onMouseLeave={() => tooltipLocked && setHoveredTopic(null)}
                className="flex items-center gap-2 px-1 py-0.5 rounded cursor-default transition-opacity"
                style={{ opacity: hoveredTopic && hoveredTopic !== entry.dataKey ? 0.3 : 1 }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: entry.color }} />
@@ -73,9 +106,12 @@ export function ManagerDashboard() {
             <span className="ml-auto font-medium">{entry.value}</span>
           </div>
         ))}
+        {tooltipLocked && (
+          <p className="text-[9px] text-muted-foreground mt-1 text-center">Passe o mouse para destacar</p>
+        )}
       </div>
     );
-  }, [hoveredTopic]);
+  }, [hoveredTopic, tooltipLocked, lockedPayload]);
 
   const allFeedback = useMemo(() => filteredTasks.flatMap((t) => t.feedback), [filteredTasks]);
 
