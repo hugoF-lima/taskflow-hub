@@ -14,10 +14,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CalendarIcon, ChevronDown, Paperclip, X } from 'lucide-react';
+import { CalendarIcon, ChevronDown, Paperclip, X, Clock } from 'lucide-react';
 import { format, startOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 interface Attachment {
@@ -155,7 +156,11 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
                   {assigneeIds.length > 0 ? selectedNames : <span className="text-muted-foreground">Selecione...</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-64 p-0" align="start">
+              <PopoverContent 
+                className="w-64 p-0" 
+                align="start"
+                onWheel={(e) => e.stopPropagation()}
+              >
                 <div className="overflow-y-auto max-h-60 p-2">
                   {users.map(u => {
                     const dept = departments.find(d => d.id === u.departmentId);
@@ -190,7 +195,11 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
                     {noDeadline ? 'Sem data' : deadline ? format(deadline, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar data'}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent 
+                  className="w-auto p-0" 
+                  align="start"
+                  onWheel={(e) => e.stopPropagation()}
+                >
                   <Calendar
                     mode="single"
                     selected={deadline}
@@ -205,15 +214,75 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
                   />
                 </PopoverContent>
               </Popover>
-              <Input
-                type="time"
-                lang="pt-BR"
-                value={deadlineTime}
-                onChange={e => setDeadlineTime(e.target.value)}
-                disabled={noDeadline}
-                className="h-9 w-28 text-xs"
-                step="60"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={noDeadline}
+                    className={cn(
+                      "h-9 w-24 flex items-center gap-2 text-xs font-normal",
+                      !deadlineTime && "text-muted-foreground"
+                    )}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    {deadlineTime}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-[120px] p-0" 
+                  align="start"
+                  onWheel={(e) => e.stopPropagation()}
+                >
+                  <div className="flex h-[200px] divide-x">
+                    <ScrollArea className="flex-1">
+                      <div className="flex flex-col p-1">
+                        {Array.from({ length: 24 }).map((_, i) => {
+                          const h = i.toString().padStart(2, '0');
+                          return (
+                            <Button
+                              key={h}
+                              variant="ghost"
+                              className={cn(
+                                "h-8 w-full text-[10px] px-2",
+                                deadlineTime.startsWith(h) && "bg-accent font-bold"
+                              )}
+                              onClick={() => {
+                                const [_, m] = deadlineTime.split(':');
+                                setDeadlineTime(`${h}:${m}`);
+                              }}
+                            >
+                              {h}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                    <ScrollArea className="flex-1">
+                      <div className="flex flex-col p-1">
+                        {Array.from({ length: 60 }).map((_, i) => {
+                          const m = i.toString().padStart(2, '0');
+                          return (
+                            <Button
+                              key={m}
+                              variant="ghost"
+                              className={cn(
+                                "h-8 w-full text-[10px] px-2",
+                                deadlineTime.endsWith(m) && "bg-accent font-bold"
+                              )}
+                              onClick={() => {
+                                const [h, _] = deadlineTime.split(':');
+                                setDeadlineTime(`${h}:${m}`);
+                              }}
+                            >
+                              {m}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <div className="flex items-center gap-1.5">
                 <Checkbox id="noDeadline" checked={noDeadline} onCheckedChange={c => { setNoDeadline(c === true); if (c) setDeadline(undefined); }} />
                 <Label htmlFor="noDeadline" className="text-xs cursor-pointer whitespace-nowrap">Sem data</Label>

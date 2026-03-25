@@ -23,7 +23,8 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -183,7 +184,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                           {assigneeIds.length > 0 ? selectedNames : <span className="text-muted-foreground">Selecione...</span>}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-64 p-2 max-h-60 overflow-y-auto" align="start">
+                      <PopoverContent 
+                        className="w-64 p-2 max-h-60 overflow-y-auto" 
+                        align="start"
+                        onWheel={(e) => e.stopPropagation()}
+                      >
                         {users.map(u => {
                           const d = departments.find(dp => dp.id === u.departmentId);
                           return (
@@ -211,17 +216,83 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                             {noDeadline ? 'Sem data' : deadline ? format(deadline, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar data'}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent 
+                          className="w-auto p-0" 
+                          align="start"
+                          onWheel={(e) => e.stopPropagation()}
+                        >
                           <Calendar mode="single" selected={deadline} onSelect={setDeadline} initialFocus className="p-3 pointer-events-auto" />
                         </PopoverContent>
                       </Popover>
-                      <Input
-                        type="time"
-                        value={deadlineTime}
-                        onChange={e => setDeadlineTime(e.target.value)}
-                        disabled={noDeadline}
-                        className="h-8 w-24 text-xs"
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={noDeadline}
+                            className={cn(
+                              "h-8 w-24 flex items-center gap-2 text-xs font-normal",
+                              !deadlineTime && "text-muted-foreground"
+                            )}
+                          >
+                            <Clock className="h-3 w-3" />
+                            {deadlineTime}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent 
+                          className="w-[120px] p-0" 
+                          align="start"
+                          onWheel={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex h-[180px] divide-x">
+                            <ScrollArea className="flex-1">
+                              <div className="flex flex-col p-1">
+                                {Array.from({ length: 24 }).map((_, i) => {
+                                  const h = i.toString().padStart(2, '0');
+                                  return (
+                                    <Button
+                                      key={h}
+                                      variant="ghost"
+                                      className={cn(
+                                        "h-7 w-full text-[10px] px-2",
+                                        deadlineTime.startsWith(h) && "bg-accent font-bold"
+                                      )}
+                                      onClick={() => {
+                                        const [_, m] = deadlineTime.split(':');
+                                        setDeadlineTime(`${h}:${m}`);
+                                      }}
+                                    >
+                                      {h}
+                                    </Button>
+                                  );
+                                })}
+                              </div>
+                            </ScrollArea>
+                            <ScrollArea className="flex-1">
+                              <div className="flex flex-col p-1">
+                                {Array.from({ length: 60 }).map((_, i) => {
+                                  const m = i.toString().padStart(2, '0');
+                                  return (
+                                    <Button
+                                      key={m}
+                                      variant="ghost"
+                                      className={cn(
+                                        "h-7 w-full text-[10px] px-2",
+                                        deadlineTime.endsWith(m) && "bg-accent font-bold"
+                                      )}
+                                      onClick={() => {
+                                        const [h, _] = deadlineTime.split(':');
+                                        setDeadlineTime(`${h}:${m}`);
+                                      }}
+                                    >
+                                      {m}
+                                    </Button>
+                                  );
+                                })}
+                              </div>
+                            </ScrollArea>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       <div className="flex items-center gap-1.5">
                         <Checkbox id="noDeadlineEdit" checked={noDeadline} onCheckedChange={c => { setNoDeadline(c === true); if (c) setDeadline(undefined); }} />
                         <Label htmlFor="noDeadlineEdit" className="text-xs cursor-pointer whitespace-nowrap">Sem data</Label>

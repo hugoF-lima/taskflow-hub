@@ -4,8 +4,8 @@ import { LayoutGrid, List, Grid2x2 } from 'lucide-react';
 import { ViewMode } from '@/types';
 
 const views: { value: ViewMode; label: string; icon: React.ReactNode }[] = [
-  { value: 'card', label: 'Card View', icon: <LayoutGrid className="h-3.5 w-3.5" /> },
-  { value: 'list', label: 'List View', icon: <List className="h-3.5 w-3.5" /> },
+  { value: 'card', label: 'Card', icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+  { value: 'list', label: 'Lista', icon: <List className="h-3.5 w-3.5" /> },
   { value: 'eisenhower', label: 'Eisenhower', icon: <Grid2x2 className="h-3.5 w-3.5" /> },
 ];
 
@@ -17,7 +17,7 @@ export function ViewSwitcher() {
     <Select value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
       <SelectTrigger className="h-8 w-[150px] text-xs gap-1.5 bg-secondary/50 border-none">
         <div className="flex items-center gap-1.5">
-          {current.icon}
+          {/* {current.icon} */}
           <SelectValue />
         </div>
       </SelectTrigger>
