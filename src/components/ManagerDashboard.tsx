@@ -245,12 +245,17 @@ export function ManagerDashboard() {
               <Card className="p-4">
                 <h3 className="text-sm font-semibold mb-3">Tendência de Tópicos (15 dias)</h3>
                 <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={trendData}>
+                  <LineChart data={trendData} onClick={handleChartClick}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                     <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                    <Tooltip offset={16} content={<CustomTrendTooltip />}
-                      isAnimationActive={false} allowEscapeViewBox={{ x: true, y: true }} />
+                    <Tooltip
+                      offset={8}
+                      content={<CustomTrendTooltip />}
+                      isAnimationActive={false}
+                      allowEscapeViewBox={{ x: true, y: true }}
+                      trigger={tooltipLocked ? "click" : "hover"}
+                    />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: 9 }} />
                     {topics.map((topic, i) => (
                       <Line
@@ -259,7 +264,8 @@ export function ManagerDashboard() {
                         dataKey={topic}
                         stroke={pieColors[i % pieColors.length]}
                         strokeWidth={2}
-                        dot={false}
+                        dot={{ r: 3, cursor: 'pointer', strokeWidth: 0, fill: pieColors[i % pieColors.length] }}
+                        activeDot={{ r: 5, cursor: 'pointer', onClick: handleDotClick }}
                         strokeOpacity={hoveredTopic === null || hoveredTopic === topic ? 1 : 0.15}
                       />
                     ))}
