@@ -18,6 +18,8 @@ interface AppContextType {
   toggleSetting: (key: keyof AppSettings) => void;
   addFeedback: (taskId: string, feedback: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>) => void;
   addTask: (task: Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>) => void;
+  updateTask: (taskId: string, updates: Partial<Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>>) => void;
+  deleteTask: (taskId: string) => void;
   toggleTaskCompletion: (taskId: string) => boolean;
   toggleTaskImportance: (taskId: string) => void;
   filteredTasks: Task[];
@@ -177,9 +179,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     tasks, filters, setFilter, resetFilters,
     selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection,
     viewMode, setViewMode, settings, toggleSetting,
-    addFeedback, addTask, toggleTaskCompletion, toggleTaskImportance,
+    addFeedback, addTask, updateTask, deleteTask, toggleTaskCompletion, toggleTaskImportance,
     filteredTasks, getTaskStatus, zoomLevel, setZoomLevel,
-  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, addTask, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel]);
+  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, addTask, updateTask, deleteTask, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
