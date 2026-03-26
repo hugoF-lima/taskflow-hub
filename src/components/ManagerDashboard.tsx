@@ -1,7 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
 import { FeedbackTopic, Task } from "@/types";
-import { FeedbackTopic, Task } from "@/types";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
