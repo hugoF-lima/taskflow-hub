@@ -22,11 +22,20 @@ const initialCredentials: MockCredential[] = [
   { email: 'bruno@empresa.com', password: 'info123', userId: 'u3', permissions: { visibleDepartments: ['informatica'], role: 'user' } },
 ];
 
+export interface RegisteredUser {
+  id: string;
+  name: string;
+  email: string;
+  departmentId: string;
+  role: 'admin' | 'user';
+}
+
 interface AuthContextType {
   currentUser: User | null;
   isAuthenticated: boolean;
   permissions: UserPermissions | null;
   pendingRegistrations: PendingRegistration[];
+  registeredUsers: RegisteredUser[];
   login: (email: string, password: string) => boolean;
   logout: () => void;
   canActOnTask: (task: Task) => boolean;
@@ -107,10 +116,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const registeredUsers: RegisteredUser[] = allUsers.map(u => {
+    const cred = credentials.find(c => c.userId === u.id);
+    return { id: u.id, name: u.name, email: cred?.email ?? '', departmentId: u.departmentId, role: (cred?.permissions.role ?? 'user') as 'admin' | 'user' };
+  });
+
   return (
     <AuthContext.Provider value={{
       currentUser, isAuthenticated: !!currentUser, permissions,
-      pendingRegistrations, login, logout, canActOnTask,
+      pendingRegistrations, registeredUsers, login, logout, canActOnTask,
       addRegistration, approveRegistration,
     }}>
       {children}

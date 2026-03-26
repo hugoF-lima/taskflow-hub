@@ -8,7 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { departments } from '@/data/mockData';
 import { toast } from 'sonner';
-import { UserCheck, Inbox } from 'lucide-react';
+import { UserCheck, Inbox, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface Props {
   open: boolean;
@@ -67,7 +68,7 @@ function RegistrationItem({ reg, onApprove }: { reg: PendingRegistration; onAppr
 }
 
 export function ManageAccessDialog({ open, onOpenChange }: Props) {
-  const { pendingRegistrations, approveRegistration } = useAuth();
+  const { pendingRegistrations, approveRegistration, registeredUsers } = useAuth();
 
   const handleApprove = (id: string, depts: string[], pw: string) => {
     approveRegistration(id, depts, pw);
@@ -94,6 +95,30 @@ export function ManageAccessDialog({ open, onOpenChange }: Props) {
             ))}
           </div>
         )}
+
+        <Separator />
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">Acessos existentes</h3>
+          </div>
+          {registeredUsers.map(u => {
+            const dept = departments.find(d => d.id === u.departmentId);
+            return (
+              <div key={u.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{u.name}</p>
+                  <p className="text-xs text-muted-foreground">{u.email}</p>
+                  <p className="text-xs text-muted-foreground">{dept?.name ?? u.departmentId}</p>
+                </div>
+                <Badge variant={u.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
+                  {u.role === 'admin' ? 'Admin' : 'Usuário'}
+                </Badge>
+              </div>
+            );
+          })}
+        </div>
       </DialogContent>
     </Dialog>
   );
