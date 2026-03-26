@@ -17,8 +17,9 @@ function getInitials(name: string) {
 }
 
 export function UserAvatarMenu() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, permissions } = useAuth();
   const { settings, toggleSetting } = useAppContext();
+  const [accessOpen, setAccessOpen] = useState(false);
 
   if (!currentUser) return null;
 
