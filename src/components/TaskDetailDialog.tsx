@@ -489,6 +489,60 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={confirmResolve} onOpenChange={setConfirmResolve}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deseja finalizar chamado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você pode adicionar um feedback antes de finalizar (opcional).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">Tópico</Label>
+                <Select value={resolveFbTopic} onValueChange={v => setResolveFbTopic(v as FeedbackTopic)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <SelectContent>
+                    {topics.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">Tipo</Label>
+                <Select value={resolveFbType} onValueChange={v => setResolveFbType(v as FeedbackType)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <SelectContent>
+                    {types.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Comentário (opcional)</Label>
+              <Textarea
+                value={resolveFbComment}
+                onChange={e => setResolveFbComment(e.target.value)}
+                maxLength={450}
+                className="text-xs resize-none h-16"
+                placeholder="Observações sobre o feedback..."
+              />
+              <p className="text-[10px] text-muted-foreground text-right">{resolveFbComment.length}/450</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch id="anonResolve" checked={resolveFbAnonymous} onCheckedChange={setResolveFbAnonymous} />
+              <Label htmlFor="anonResolve" className="text-xs">Anônimo</Label>
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResolve}>Sim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
