@@ -178,6 +178,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                     <DropdownMenuItem onClick={() => setEditing(true)}>
                       <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
                     </DropdownMenuItem>
+                    {!task.completed && (
+                      <DropdownMenuItem onClick={() => setConfirmResolve(true)}>
+                        <CheckCircle className="h-3.5 w-3.5 mr-2" /> Resolver Tarefa
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => setConfirmDelete(true)} className="text-destructive focus:text-destructive">
                       <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
                     </DropdownMenuItem>
