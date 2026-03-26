@@ -29,7 +29,7 @@ function getDeptColor(deptId: string) {
 
 export function AppSidebar() {
   const { selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, filteredTasks, filters, setFilter } = useAppContext();
-  const { currentUser } = useAuth();
+  const { currentUser, permissions } = useAuth();
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const onItemClick = useCallback((userId: string) => {
@@ -61,8 +61,12 @@ export function AppSidebar() {
   const currentUserId = currentUser?.id;
   const currentUserDeptId = currentUser?.departmentId;
 
-  // Order: current user's dept first, then rest
-  const sortedDepts = [...departments].sort((a, b) => {
+  // Filter departments by visibility permission, then order current user's dept first
+  const visibleDepts = permissions?.visibleDepartments === 'all'
+    ? departments
+    : departments.filter(d => permissions?.visibleDepartments?.includes(d.id));
+
+  const sortedDepts = [...visibleDepts].sort((a, b) => {
     if (a.id === currentUserDeptId) return -1;
     if (b.id === currentUserDeptId) return 1;
     return 0;

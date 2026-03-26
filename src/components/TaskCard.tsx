@@ -13,6 +13,7 @@ import { ptBR } from 'date-fns/locale';
 import { useState } from 'react';
 import { TaskDetailDialog } from './TaskDetailDialog';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 function getUrgencyClasses(urgency: UrgencyLevel) {
   const map: Record<UrgencyLevel, string> = {
@@ -32,6 +33,8 @@ interface TaskCardProps {
 
 export function TaskCard({ task, compact }: TaskCardProps) {
   const { toggleTaskCompletion, toggleTaskImportance, getTaskStatus, settings } = useAppContext();
+  const { canActOnTask } = useAuth();
+  const canAct = canActOnTask(task);
   const [detailOpen, setDetailOpen] = useState(false);
   const taskUsers = task.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
   const firstUser = taskUsers[0];
@@ -72,12 +75,17 @@ export function TaskCard({ task, compact }: TaskCardProps) {
               )}
             </div>
             <div className="flex items-center gap-1">
-              <button onClick={(e) => { e.stopPropagation(); toggleTaskImportance(task.id); }} className="p-0.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); if (canAct) toggleTaskImportance(task.id); }}
+                className={cn('p-0.5', !canAct && 'cursor-default opacity-50')}
+              >
                 <Star className={cn('h-3.5 w-3.5', task.important ? 'fill-urgency-medium text-urgency-medium' : 'text-muted-foreground/40')} />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); handleComplete(); }} className="p-0.5">
-                <Check className={cn('h-3.5 w-3.5', task.completed ? 'text-urgency-normal' : 'text-muted-foreground/40')} />
-              </button>
+              {canAct && (
+                <button onClick={(e) => { e.stopPropagation(); handleComplete(); }} className="p-0.5">
+                  <Check className={cn('h-3.5 w-3.5', task.completed ? 'text-urgency-normal' : 'text-muted-foreground/40')} />
+                </button>
+              )}
             </div>
           </div>
 
