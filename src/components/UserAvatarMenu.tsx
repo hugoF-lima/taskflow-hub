@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppContext } from '@/context/AppContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -6,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { LogOut, Moon } from 'lucide-react';
+import { LogOut, Moon, Users } from 'lucide-react';
 import { departments } from '@/data/mockData';
+import { ManageAccessDialog } from '@/components/ManageAccessDialog';
 
 function getInitials(name: string) {
   const parts = name.split(' ');
@@ -15,8 +17,9 @@ function getInitials(name: string) {
 }
 
 export function UserAvatarMenu() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, permissions } = useAuth();
   const { settings, toggleSetting } = useAppContext();
+  const [accessOpen, setAccessOpen] = useState(false);
 
   if (!currentUser) return null;
 
@@ -24,6 +27,7 @@ export function UserAvatarMenu() {
   const deptColor = dept?.color ?? '0 0% 50%';
 
   return (
+    <>
     <Popover>
       <PopoverTrigger asChild>
         <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ring-offset-background">
@@ -56,6 +60,21 @@ export function UserAvatarMenu() {
 
           <Separator />
 
+          {permissions?.role === 'admin' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2"
+                onClick={() => setAccessOpen(true)}
+              >
+                <Users className="h-4 w-4" />
+                Gerenciar acessos
+              </Button>
+              <Separator />
+            </>
+          )}
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Moon className="h-4 w-4 text-muted-foreground" />
@@ -82,5 +101,7 @@ export function UserAvatarMenu() {
         </div>
       </PopoverContent>
     </Popover>
+    {permissions?.role === 'admin' && <ManageAccessDialog open={accessOpen} onOpenChange={setAccessOpen} />}
+    </>
   );
 }
