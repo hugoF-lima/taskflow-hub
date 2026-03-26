@@ -1,5 +1,6 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback } from 'react';
 import { users, departments } from '@/data/mockData';
+import { Separator } from '@/components/ui/separator';
 import { useAppContext } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -89,8 +90,7 @@ export function AppSidebar() {
           tooltip={label || user.name}
           className={cn(
             'h-12 px-3 transition-all',
-            isSelected && sidebarMode === 'isolate' && 'ring-1 ring-sidebar-primary',
-            highlight && 'bg-primary/10 ring-2 ring-primary/40'
+            isSelected && sidebarMode === 'isolate' && 'ring-1 ring-sidebar-primary'
           )}
         >
           <div className="relative">
@@ -134,11 +134,14 @@ export function AppSidebar() {
           <span className="text-sm font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
             Equipe
           </span>
-          {sidebarMode !== 'none' && (
+          {(sidebarMode !== 'none' || filters.departmentId) && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={clearUserSelection}
+              onClick={() => {
+                clearUserSelection();
+                setFilter('departmentId', null);
+              }}
               className="ml-auto text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent h-7 group-data-[collapsible=icon]:hidden"
             >
               Mostrar todos
@@ -148,8 +151,12 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="custom-scrollbar">
         <SidebarMenu>
-          {/* Logged user "Você" */}
-          {loggedUser && renderUserItem(loggedUser, 'Você', true)}
+          {loggedUser && (
+            <>
+              {renderUserItem(loggedUser, 'Você')}
+              <Separator className="my-1 bg-sidebar-border" />
+            </>
+          )}
 
           {/* Department groups */}
           {usersByDept.map(({ dept, users: deptUsers }) => {
@@ -160,25 +167,28 @@ export function AppSidebar() {
             return (
               <Collapsible key={dept.id} defaultOpen>
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
+                  <div
+                    className={cn(
+                      'flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors',
+                      isActiveDept && 'text-sidebar-foreground bg-sidebar-accent/50 rounded-md'
+                    )}
+                  >
                     <button
-                      className={cn(
-                        'flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors group/dept',
-                        isActiveDept && 'text-sidebar-foreground bg-sidebar-accent/50 rounded-md'
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeptClick(dept.id);
-                      }}
+                      className="flex items-center gap-2 min-w-0 flex-1 hover:text-sidebar-foreground transition-colors"
+                      onClick={() => handleDeptClick(dept.id)}
                     >
                       <div
                         className="h-2 w-2 rounded-full shrink-0"
                         style={{ background: `hsl(${dept.color})` }}
                       />
                       <span className="group-data-[collapsible=icon]:hidden truncate">{dept.name}</span>
-                      <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 transition-transform group-data-[collapsible=icon]:hidden [[data-state=closed]_&]:rotate-[-90deg]" />
                     </button>
-                  </CollapsibleTrigger>
+                    <CollapsibleTrigger asChild>
+                      <button className="shrink-0 hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden" onClick={(e) => e.stopPropagation()}>
+                        <ChevronDown className="h-3.5 w-3.5 transition-transform [[data-state=closed]_&]:rotate-[-90deg]" />
+                      </button>
+                    </CollapsibleTrigger>
+                  </div>
                 </SidebarMenuItem>
                 <CollapsibleContent>
                   {deptUsers.map(user => renderUserItem(user))}
