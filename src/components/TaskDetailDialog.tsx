@@ -40,11 +40,19 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
-  const { tasks, addFeedback, updateTask, deleteTask } = useAppContext();
+  const { tasks, addFeedback, updateTask, deleteTask, toggleTaskCompletion } = useAppContext();
+  const { toast } = useToast();
   const task = tasks.find(t => t.id === taskId);
 
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmResolve, setConfirmResolve] = useState(false);
+
+  // Resolve-dialog feedback state
+  const [resolveFbTopic, setResolveFbTopic] = useState<FeedbackTopic | ''>('');
+  const [resolveFbType, setResolveFbType] = useState<FeedbackType | ''>('');
+  const [resolveFbComment, setResolveFbComment] = useState('');
+  const [resolveFbAnonymous, setResolveFbAnonymous] = useState(true);
 
   const [title, setTitle] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
