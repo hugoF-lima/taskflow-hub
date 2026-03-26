@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { users, departments, allProcesses, urgencyConfig } from '@/data/mockData';
-import { Task, UrgencyLevel, FeedbackTopic, FeedbackType } from '@/types';
+import { Task, UrgencyLevel, FeedbackTopic, FeedbackType, FeedbackAttachment } from '@/types';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
@@ -24,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check, Clock, CheckCircle } from 'lucide-react';
+import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check, Clock, CheckCircle, Paperclip, Download, FileText, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
