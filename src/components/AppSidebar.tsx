@@ -151,8 +151,12 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="custom-scrollbar">
         <SidebarMenu>
-          {/* Logged user "Você" */}
-          {loggedUser && renderUserItem(loggedUser, 'Você', true)}
+          {loggedUser && (
+            <>
+              {renderUserItem(loggedUser, 'Você')}
+              <Separator className="my-1 bg-sidebar-border" />
+            </>
+          )}
 
           {/* Department groups */}
           {usersByDept.map(({ dept, users: deptUsers }) => {
