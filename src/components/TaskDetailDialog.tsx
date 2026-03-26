@@ -139,6 +139,20 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     setFbComment('');
   };
 
+  const handleResolve = () => {
+    if (resolveFbTopic && resolveFbType) {
+      addFeedback(taskId, { topic: resolveFbTopic, type: resolveFbType, comment: resolveFbComment || undefined, anonymous: resolveFbAnonymous, authorId: resolveFbAnonymous ? undefined : 'u1' });
+    }
+    toggleTaskCompletion(taskId);
+    setConfirmResolve(false);
+    setResolveFbTopic('');
+    setResolveFbType('');
+    setResolveFbComment('');
+    setResolveFbAnonymous(true);
+    toast({ title: 'Chamado finalizado', description: `"${task.title}" foi marcado como concluído.` });
+    onOpenChange(false);
+  };
+
   const selectedNames = assigneeIds
     .map(id => users.find(u => u.id === id)?.name?.split(' ')[0])
     .filter(Boolean)
