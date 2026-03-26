@@ -1,65 +1,51 @@
+## Plan: Reorganize Sidebar with Department Groups, Logged User Highlight & Filter Sync
 
+### Overview
 
-## Plan: Interactive LineChart Tooltip with Hover-Focus & Line Highlighting
+Restructure the sidebar to group users under collapsible department headers. The logged-in user appears at the top with the label "Você" and visual distinction. Clicking a department header syncs with the FilterBar's department filter.
 
-### Problem
-The LineChart tooltip appears too close to the cursor and is not interactive — hovering items inside it doesn't highlight the associated line.
+### 1. Logged User Section at Top
 
-### Approach
+**File:** `src/components/AppSidebar.tsx`
 
-**File:** `src/components/ManagerDashboard.tsx`
+- Import `useAuth` from `AuthContext` to get `currentUser`
+- Before the department groups, render a dedicated section showing the logged user:
+  - Avatar with a subtle highlight ring/background (e.g., `ring-2 ring-primary/40` or a brighter background)
+  - Name replaced with **"Você"**, department shown as subtitle
+  - Same click/double-click behavior as other user items
+- Immediately after "Você", show the logged user's department group with their teammates (excluding the logged user to avoid duplication)
 
-1. **Add state:** `hoveredTopic: string | null` to track which topic the user is hovering inside the tooltip.
+### 2. Collapsible Department Groups
 
-2. **Custom tooltip with offset:** Replace the Recharts `<Tooltip>` on the LineChart with a custom `content` renderer that:
-   - Adds `offset={16}` prop to push the tooltip ~16px away from the cursor (Recharts `offset` controls distance from active point)
-   - Renders each topic row with `onMouseEnter` / `onMouseLeave` handlers that set `hoveredTopic`
-   - When a topic is hovered, all other rows get `opacity: 0.3`
-   - Uses `allowEscapeViewBox={{ x: true, y: true }}` and `isAnimationActive={false}` for smooth interaction
+**File:** `src/components/AppSidebar.tsx`
 
-3. **Conditional line opacity:** Each `<Line>` component gets a dynamic `strokeOpacity`:
-   - If `hoveredTopic` is null → all lines at full opacity (1)
-   - If `hoveredTopic` matches → that line at opacity 1, all others at 0.15
+- Import `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` from `@/components/ui/collapsible`
+- Import `ChevronDown` icon
+- Group `users` by `departmentId`, iterating over `departments`
+- Each department renders as a `Collapsible` (default open):
+  - **Header/Trigger**: department name + colored dot + chevron icon, clickable to collapse/expand
+  - **Content**: list of users in that department (same user item rendering as current)
+- The logged user's department appears first (right after "Você"), remaining departments follow in their natural order
+- Skip the logged user from their department group (already shown at top)
 
-### Technical Details
+### 3. Department Header Click → Filter Sync
 
-```tsx
-// State
-const [hoveredTopic, setHoveredTopic] = useState<string | null>(null);
+**File:** `src/components/AppSidebar.tsx`
 
-// Custom tooltip content component (inline or extracted)
-const CustomTrendTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-lg border bg-card p-2 text-xs shadow-xl"
-         style={{ color: 'hsl(var(--foreground))' }}>
-      <p className="font-medium mb-1">{label}</p>
-      {payload.map(entry => (
-        <div key={entry.dataKey}
-             onMouseEnter={() => setHoveredTopic(entry.dataKey)}
-             onMouseLeave={() => setHoveredTopic(null)}
-             className="flex items-center gap-2 px-1 py-0.5 rounded cursor-default transition-opacity"
-             style={{ opacity: hoveredTopic && hoveredTopic !== entry.dataKey ? 0.3 : 1 }}>
-          <span className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
-          <span>{entry.dataKey}</span>
-          <span className="ml-auto font-medium">{entry.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
+- When clicking a department header, call `setFilter('departmentId', deptId)` from `useAppContext()`
+- If clicking the already-active department filter, toggle it off: `setFilter('departmentId', null)`
+- Visually indicate the active department header (e.g., bolder text, accent background) when `filters.departmentId === dept.id`
+- This keeps it in sync with the FilterBar's "Todos os setores" dropdown — both read/write the same `filters.departmentId` state
 
-// On <Tooltip>
-<Tooltip offset={16} content={<CustomTrendTooltip />} 
-         isAnimationActive={false} allowEscapeViewBox={{ x: true, y: true }} />
+### 4. Layout Preservation
 
-// On each <Line>
-<Line strokeOpacity={hoveredTopic === null || hoveredTopic === topic ? 1 : 0.15} ... />
-```
+- Keep the "Equipe" header with "Mostrar todos" inline button
+- The `SidebarTrigger` and collapsed icon mode continue to work
+- User items retain their existing click (highlight) / double-click (isolate) behavior
 
 ### Files Changed
 
-| File | Change |
-|------|--------|
-| `src/components/ManagerDashboard.tsx` | Add `hoveredTopic` state, custom tooltip component, dynamic line opacity |
 
+| File                            | Change                                                                            |
+| ------------------------------- | --------------------------------------------------------------------------------- |
+| `src/components/AppSidebar.tsx` | Add "Você" section, collapsible department groups, department click → filter sync |
