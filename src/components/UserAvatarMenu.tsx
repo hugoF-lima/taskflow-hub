@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppContext } from '@/context/AppContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -6,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { LogOut, Moon } from 'lucide-react';
+import { LogOut, Moon, Users } from 'lucide-react';
 import { departments } from '@/data/mockData';
+import { ManageAccessDialog } from '@/components/ManageAccessDialog';
 
 function getInitials(name: string) {
   const parts = name.split(' ');
