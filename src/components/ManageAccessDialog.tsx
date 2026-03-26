@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth, PendingRegistration } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { departments } from '@/data/mockData';
+import { useAppContext } from '@/context/AppContext';
 import { toast } from 'sonner';
 import { UserCheck, Inbox, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-function RegistrationItem({ reg, onApprove }: { reg: PendingRegistration; onApprove: (id: string, depts: string[], pw: string) => void }) {
+function RegistrationItem({ reg, onApprove, departments }: { reg: PendingRegistration; onApprove: (id: string, depts: string[], pw: string) => void; departments: { id: string; name: string }[] }) {
   const [selectedDepts, setSelectedDepts] = useState<string[]>([reg.departmentId]);
   const [password, setPassword] = useState('123newuser');
 
@@ -68,7 +68,16 @@ function RegistrationItem({ reg, onApprove }: { reg: PendingRegistration; onAppr
 }
 
 export function ManageAccessDialog({ open, onOpenChange }: Props) {
-  const { pendingRegistrations, approveRegistration, registeredUsers } = useAuth();
+  const { pendingRegistrations, approveRegistration, registeredUsers, fetchPendingRegistrations, fetchRegisteredUsers } = useAuth();
+  const { departments } = useAppContext();
+
+  // Fetch data when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      fetchPendingRegistrations();
+      fetchRegisteredUsers();
+    }
+  }, [open, fetchPendingRegistrations, fetchRegisteredUsers]);
 
   const handleApprove = (id: string, depts: string[], pw: string) => {
     approveRegistration(id, depts, pw);
@@ -91,7 +100,7 @@ export function ManageAccessDialog({ open, onOpenChange }: Props) {
         ) : (
           <div className="space-y-3">
             {pendingRegistrations.map(reg => (
-              <RegistrationItem key={reg.id} reg={reg} onApprove={handleApprove} />
+              <RegistrationItem key={reg.id} reg={reg} onApprove={handleApprove} departments={departments} />
             ))}
           </div>
         )}

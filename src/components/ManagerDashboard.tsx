@@ -1,6 +1,5 @@
 import { useMemo, useState, useCallback } from "react";
 import { useAppContext } from "@/context/AppContext";
-import { users, departments } from "@/data/mockData";
 import { FeedbackTopic, Task } from "@/types";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,7 +51,7 @@ type DrillDownState =
   | { type: "activities"; tasks: Task[]; title: string; parentState: DrillDownState };
 
 export function ManagerDashboard() {
-  const { filteredTasks, toggleSetting } = useAppContext();
+  const { filteredTasks, toggleSetting, users, departments } = useAppContext();
   const [drillDown, setDrillDown] = useState<DrillDownState>({ type: "none" });
   const [hoveredTopic, setHoveredTopic] = useState<string | null>(null);
   const [tooltipLocked, setTooltipLocked] = useState(false);

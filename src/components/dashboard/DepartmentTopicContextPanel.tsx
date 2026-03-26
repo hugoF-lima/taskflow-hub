@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useAppContext } from "@/context/AppContext";
-import { users, departments } from "@/data/mockData";
 import { FeedbackTopic, Task } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ interface Props {
 }
 
 export function DepartmentTopicContextPanel({ departmentId, topic, onBack, onViewActivities }: Props) {
-  const { filteredTasks } = useAppContext();
+  const { filteredTasks, users, departments } = useAppContext();
   const dept = departments.find((d) => d.id === departmentId);
 
   const analysis = useMemo(() => {

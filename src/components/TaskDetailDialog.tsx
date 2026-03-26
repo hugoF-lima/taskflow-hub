@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { users, departments, allProcesses, urgencyConfig } from '@/data/mockData';
+import { urgencyConfig } from '@/data/mockData';
 import { Task, UrgencyLevel, FeedbackTopic, FeedbackType, FeedbackAttachment } from '@/types';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -41,7 +41,7 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
-  const { tasks, addFeedback, updateTask, deleteTask, toggleTaskCompletion } = useAppContext();
+  const { tasks, addFeedback, updateTask, deleteTask, toggleTaskCompletion, users, departments, allProcesses } = useAppContext();
   const { canActOnTask } = useAuth();
   const { toast } = useToast();
   const task = tasks.find(t => t.id === taskId);

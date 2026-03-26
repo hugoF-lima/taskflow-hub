@@ -1,5 +1,4 @@
 import { useAppContext } from '@/context/AppContext';
-import { departments, allProcesses } from '@/data/mockData';
 import { useAuth } from '@/context/AuthContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -34,7 +33,7 @@ export function FilterBar() {
     setZoomLevel(newValue);
   };
 
-  const { filters, setFilter, resetFilters, zoomLevel, setZoomLevel } = useAppContext();
+  const { filters, setFilter, resetFilters, zoomLevel, setZoomLevel, departments, allProcesses } = useAppContext();
   const { permissions } = useAuth();
 
   const visibleDepartments = permissions?.visibleDepartments === 'all'

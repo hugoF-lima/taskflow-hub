@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,15 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClipboardList, LogIn, Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { departments } from '@/data/mockData';
+import { Department } from '@/types';
 
 export default function Login() {
   const { login, addRegistration } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   // Login state
-  const [email, setEmail] = useState('carlos@empresa.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -25,32 +27,34 @@ export default function Login() {
   const [regDept, setRegDept] = useState('');
   const [regLoading, setRegLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    supabase.from('departments').select('*').then(({ data }) => {
+      if (data) setDepartments(data.map(d => ({ id: d.id, name: d.name, color: d.color })));
+    });
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      const success = login(email, password);
-      if (!success) toast.error('Credenciais inválidas');
-      setLoading(false);
-    }, 600);
+    const success = await login(email, password);
+    if (!success) toast.error('Credenciais inválidas');
+    setLoading(false);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim() || !regEmail.trim() || !regDept) {
       toast.error('Preencha todos os campos');
       return;
     }
     setRegLoading(true);
-    setTimeout(() => {
-      addRegistration(regName.trim(), regEmail.trim(), regDept);
-      toast.success('Enviamos seu pedido, logo você receberá um retorno por email');
-      setRegName('');
-      setRegEmail('');
-      setRegDept('');
-      setMode('login');
-      setRegLoading(false);
-    }, 600);
+    await addRegistration(regName.trim(), regEmail.trim(), regDept);
+    toast.success('Enviamos seu pedido, logo você receberá um retorno por email');
+    setRegName('');
+    setRegEmail('');
+    setRegDept('');
+    setMode('login');
+    setRegLoading(false);
   };
 
   return (
@@ -74,7 +78,7 @@ export default function Login() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-base">Login</CardTitle>
                 <CardDescription className="text-xs">
-                  Use as credenciais abaixo para acessar o sistema
+                  Use suas credenciais para acessar o sistema
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -104,11 +108,6 @@ export default function Login() {
               <button onClick={() => setMode('register')} className="text-sm text-primary underline hover:text-primary/80 transition-colors">
                 Ainda não é usuário? Criar conta
               </button>
-            </div>
-
-            <div className="text-center text-xs text-muted-foreground space-y-1">
-              <p>Admin: <span className="font-medium text-foreground">carlos@empresa.com</span> / <span className="font-medium text-foreground">admin123</span></p>
-              <p>Usuário: <span className="font-medium text-foreground">bruno@empresa.com</span> / <span className="font-medium text-foreground">info123</span></p>
             </div>
           </>
         ) : (

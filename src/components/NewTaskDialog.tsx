@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { users, departments, allProcesses, urgencyConfig } from '@/data/mockData';
+import { urgencyConfig } from '@/data/mockData';
 import { UrgencyLevel } from '@/types';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -35,7 +35,7 @@ interface NewTaskDialogProps {
 }
 
 export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
-  const { addTask } = useAppContext();
+  const { addTask, users, departments, allProcesses } = useAppContext();
   const { currentUser } = useAuth();
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [deadline, setDeadline] = useState<Date | undefined>();
