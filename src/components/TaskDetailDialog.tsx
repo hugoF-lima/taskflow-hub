@@ -622,6 +622,28 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Image preview lightbox */}
+      <Dialog open={!!previewImage} onOpenChange={(o) => { if (!o) setPreviewImage(null); }}>
+        <DialogContent className="max-w-3xl p-2 bg-background/95 backdrop-blur">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Preview da imagem</DialogTitle>
+            <DialogDescription>Visualização em tamanho completo</DialogDescription>
+          </DialogHeader>
+          {previewImage && (
+            <div className="flex flex-col items-center gap-3">
+              <img src={previewImage} alt="Preview" className="max-h-[70vh] max-w-full object-contain rounded" />
+              <a
+                href={previewImage}
+                download
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Baixar imagem
+              </a>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
