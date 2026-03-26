@@ -24,7 +24,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check, Clock } from 'lucide-react';
+import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check, Clock, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -39,11 +40,19 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
-  const { tasks, addFeedback, updateTask, deleteTask } = useAppContext();
+  const { tasks, addFeedback, updateTask, deleteTask, toggleTaskCompletion } = useAppContext();
+  const { toast } = useToast();
   const task = tasks.find(t => t.id === taskId);
 
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmResolve, setConfirmResolve] = useState(false);
+
+  // Resolve-dialog feedback state
+  const [resolveFbTopic, setResolveFbTopic] = useState<FeedbackTopic | ''>('');
+  const [resolveFbType, setResolveFbType] = useState<FeedbackType | ''>('');
+  const [resolveFbComment, setResolveFbComment] = useState('');
+  const [resolveFbAnonymous, setResolveFbAnonymous] = useState(true);
 
   const [title, setTitle] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
@@ -130,6 +139,20 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     setFbComment('');
   };
 
+  const handleResolve = () => {
+    if (resolveFbTopic && resolveFbType) {
+      addFeedback(taskId, { topic: resolveFbTopic, type: resolveFbType, comment: resolveFbComment || undefined, anonymous: resolveFbAnonymous, authorId: resolveFbAnonymous ? undefined : 'u1' });
+    }
+    toggleTaskCompletion(taskId);
+    setConfirmResolve(false);
+    setResolveFbTopic('');
+    setResolveFbType('');
+    setResolveFbComment('');
+    setResolveFbAnonymous(true);
+    toast({ title: 'Chamado finalizado', description: `"${task.title}" foi marcado como concluído.` });
+    onOpenChange(false);
+  };
+
   const selectedNames = assigneeIds
     .map(id => users.find(u => u.id === id)?.name?.split(' ')[0])
     .filter(Boolean)
@@ -155,6 +178,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                     <DropdownMenuItem onClick={() => setEditing(true)}>
                       <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
                     </DropdownMenuItem>
+                    {!task.completed && (
+                      <DropdownMenuItem onClick={() => setConfirmResolve(true)}>
+                        <CheckCircle className="h-3.5 w-3.5 mr-2" /> Resolver Tarefa
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => setConfirmDelete(true)} className="text-destructive focus:text-destructive">
                       <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
                     </DropdownMenuItem>
@@ -458,6 +486,60 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmResolve} onOpenChange={setConfirmResolve}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deseja finalizar chamado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você pode adicionar um feedback antes de finalizar (opcional).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">Tópico</Label>
+                <Select value={resolveFbTopic} onValueChange={v => setResolveFbTopic(v as FeedbackTopic)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <SelectContent>
+                    {topics.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">Tipo</Label>
+                <Select value={resolveFbType} onValueChange={v => setResolveFbType(v as FeedbackType)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                  <SelectContent>
+                    {types.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Comentário (opcional)</Label>
+              <Textarea
+                value={resolveFbComment}
+                onChange={e => setResolveFbComment(e.target.value)}
+                maxLength={450}
+                className="text-xs resize-none h-16"
+                placeholder="Observações sobre o feedback..."
+              />
+              <p className="text-[10px] text-muted-foreground text-right">{resolveFbComment.length}/450</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch id="anonResolve" checked={resolveFbAnonymous} onCheckedChange={setResolveFbAnonymous} />
+              <Label htmlFor="anonResolve" className="text-xs">Anônimo</Label>
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResolve}>Sim</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
