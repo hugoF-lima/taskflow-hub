@@ -59,6 +59,21 @@ export function UserAvatarMenu() {
 
           <Separator />
 
+          {permissions?.role === 'admin' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2"
+                onClick={() => setAccessOpen(true)}
+              >
+                <Users className="h-4 w-4" />
+                Gerenciar acessos
+              </Button>
+              <Separator />
+            </>
+          )}
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Moon className="h-4 w-4 text-muted-foreground" />
