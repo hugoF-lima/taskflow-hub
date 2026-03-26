@@ -68,6 +68,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [fbType, setFbType] = useState<FeedbackType | ''>('');
   const [fbComment, setFbComment] = useState('');
   const [fbAnonymous, setFbAnonymous] = useState(true);
+  const [fbAttachments, setFbAttachments] = useState<File[]>([]);
+  const [resolveFbAttachments, setResolveFbAttachments] = useState<File[]>([]);
 
   useEffect(() => {
     if (task && open) {
