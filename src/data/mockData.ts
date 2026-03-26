@@ -48,7 +48,7 @@ function makeFeedback(taskId: string, count: number): Feedback[] {
 }
 
 let taskId = 1;
-function makeTask(assigneeId: string, title: string, daysOffset: number, urgency: UrgencyLevel, process: string, important: boolean, completed: boolean, fbCount: number): Task {
+function makeTask(assigneeId: string, title: string, daysOffset: number, urgency: UrgencyLevel, process: string, important: boolean, completed: boolean, fbCount: number, creatorId?: string): Task {
   const id = `t${taskId++}`;
   const deadline = new Date(2026, 2, 24 + daysOffset);
   return {
@@ -64,6 +64,7 @@ function makeTask(assigneeId: string, title: string, daysOffset: number, urgency
     completed,
     completedAt: completed ? new Date(2026, 2, 22).toISOString() : undefined,
     createdAt: new Date(2026, 1, Math.floor(Math.random() * 28) + 1).toISOString(),
+    createdBy: creatorId || assigneeId,
     feedback: makeFeedback(id, fbCount),
   };
 }

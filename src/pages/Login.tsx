@@ -91,9 +91,10 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground">
-          Credenciais de teste: <span className="font-medium text-foreground">carlos@empresa.com</span> / <span className="font-medium text-foreground">admin123</span>
-        </p>
+        <div className="text-center text-xs text-muted-foreground space-y-1">
+          <p>Admin: <span className="font-medium text-foreground">carlos@empresa.com</span> / <span className="font-medium text-foreground">admin123</span></p>
+          <p>Usuário: <span className="font-medium text-foreground">bruno@empresa.com</span> / <span className="font-medium text-foreground">info123</span></p>
+        </div>
       </div>
     </div>
   );

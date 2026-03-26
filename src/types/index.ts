@@ -64,7 +64,13 @@ export interface Task {
   completed: boolean;
   completedAt?: string;
   createdAt: string;
+  createdBy: string;
   feedback: Feedback[];
+}
+
+export interface UserPermissions {
+  visibleDepartments: string[] | 'all';
+  role: 'admin' | 'user';
 }
 
 export interface AppFilters {
