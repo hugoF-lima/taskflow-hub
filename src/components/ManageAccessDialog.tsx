@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { departments } from '@/data/mockData';
+import { useAppContext } from '@/context/AppContext';
 import { toast } from 'sonner';
 import { UserCheck, Inbox, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +68,16 @@ function RegistrationItem({ reg, onApprove }: { reg: PendingRegistration; onAppr
 }
 
 export function ManageAccessDialog({ open, onOpenChange }: Props) {
-  const { pendingRegistrations, approveRegistration, registeredUsers } = useAuth();
+  const { pendingRegistrations, approveRegistration, registeredUsers, fetchPendingRegistrations, fetchRegisteredUsers } = useAuth();
+  const { departments } = useAppContext();
+
+  // Fetch data when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      fetchPendingRegistrations();
+      fetchRegisteredUsers();
+    }
+  }, [open, fetchPendingRegistrations, fetchRegisteredUsers]);
 
   const handleApprove = (id: string, depts: string[], pw: string) => {
     approveRegistration(id, depts, pw);

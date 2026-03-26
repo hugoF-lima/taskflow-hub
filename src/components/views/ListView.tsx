@@ -1,5 +1,5 @@
 import { useAppContext } from '@/context/AppContext';
-import { users, departments, urgencyConfig } from '@/data/mockData';
+import { urgencyConfig } from '@/data/mockData';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { FeedbackModal } from '@/components/FeedbackModal';
 import { toast } from '@/hooks/use-toast';
 
 export function ListView() {
-  const { filteredTasks, selectedUserId, sidebarMode, toggleTaskCompletion, toggleTaskImportance, getTaskStatus, settings, zoomLevel } = useAppContext();
+  const { filteredTasks, selectedUserId, sidebarMode, toggleTaskCompletion, toggleTaskImportance, getTaskStatus, settings, zoomLevel, users, departments } = useAppContext();
   const [feedbackTaskId, setFeedbackTaskId] = useState<string | null>(null);
 
   const handleComplete = (taskId: string) => {

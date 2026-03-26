@@ -1,5 +1,4 @@
 import { useRef, useCallback } from 'react';
-import { users, departments } from '@/data/mockData';
 import { Separator } from '@/components/ui/separator';
 import { useAppContext } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
@@ -22,13 +21,13 @@ function getInitials(name: string) {
   return (parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '');
 }
 
-function getDeptColor(deptId: string) {
+function getDeptColor(deptId: string, departments: { id: string; color: string }[]) {
   const dept = departments.find(d => d.id === deptId);
   return dept?.color ?? '0 0% 50%';
 }
 
 export function AppSidebar() {
-  const { selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, filteredTasks, filters, setFilter } = useAppContext();
+  const { selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, filteredTasks, filters, setFilter, users, departments } = useAppContext();
   const { currentUser, permissions } = useAuth();
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -77,7 +76,7 @@ export function AppSidebar() {
     users: users.filter(u => u.departmentId === dept.id && u.id !== currentUserId),
   }));
 
-  const renderUserItem = (user: typeof users[0], label?: string, highlight?: boolean) => {
+  const renderUserItem = (user: (typeof users)[0], label?: string, highlight?: boolean) => {
     const dept = departments.find(d => d.id === user.departmentId);
     const isSelected = selectedUserId === user.id;
     const count = taskCountByUser[user.id] || 0;

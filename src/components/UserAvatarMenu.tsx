@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { LogOut, Moon, Users } from 'lucide-react';
-import { departments } from '@/data/mockData';
+import { useAppContext as useApp } from '@/context/AppContext';
 import { ManageAccessDialog } from '@/components/ManageAccessDialog';
 
 function getInitials(name: string) {
@@ -18,7 +18,7 @@ function getInitials(name: string) {
 
 export function UserAvatarMenu() {
   const { currentUser, logout, permissions } = useAuth();
-  const { settings, toggleSetting } = useAppContext();
+  const { settings, toggleSetting, departments } = useApp();
   const [accessOpen, setAccessOpen] = useState(false);
 
   if (!currentUser) return null;

@@ -1,6 +1,6 @@
 import { Task, UrgencyLevel } from '@/types';
 import { useAppContext } from '@/context/AppContext';
-import { users, departments, urgencyConfig } from '@/data/mockData';
+import { urgencyConfig } from '@/data/mockData';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, compact }: TaskCardProps) {
-  const { toggleTaskCompletion, toggleTaskImportance, getTaskStatus, settings } = useAppContext();
+  const { toggleTaskCompletion, toggleTaskImportance, getTaskStatus, settings, users, departments } = useAppContext();
   const { canActOnTask } = useAuth();
   const canAct = canActOnTask(task);
   const [detailOpen, setDetailOpen] = useState(false);

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAppContext } from '@/context/AppContext';
-import { users, departments } from '@/data/mockData';
 import { TaskCard } from '@/components/TaskCard';
 import { cn } from '@/lib/utils';
 
 export function CardView() {
-  const { filteredTasks, selectedUserId, sidebarMode, zoomLevel } = useAppContext();
+  const { filteredTasks, selectedUserId, sidebarMode, zoomLevel, users, departments } = useAppContext();
   const containerRef = useRef<HTMLDivElement>(null);
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const columnScrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
