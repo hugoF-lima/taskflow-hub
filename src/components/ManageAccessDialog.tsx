@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth, PendingRegistration } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-function RegistrationItem({ reg, onApprove }: { reg: PendingRegistration; onApprove: (id: string, depts: string[], pw: string) => void }) {
+function RegistrationItem({ reg, onApprove, departments }: { reg: PendingRegistration; onApprove: (id: string, depts: string[], pw: string) => void; departments: { id: string; name: string }[] }) {
   const [selectedDepts, setSelectedDepts] = useState<string[]>([reg.departmentId]);
   const [password, setPassword] = useState('123newuser');
 
@@ -100,7 +100,7 @@ export function ManageAccessDialog({ open, onOpenChange }: Props) {
         ) : (
           <div className="space-y-3">
             {pendingRegistrations.map(reg => (
-              <RegistrationItem key={reg.id} reg={reg} onApprove={handleApprove} />
+              <RegistrationItem key={reg.id} reg={reg} onApprove={handleApprove} departments={departments} />
             ))}
           </div>
         )}

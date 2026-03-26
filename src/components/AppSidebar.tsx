@@ -101,8 +101,8 @@ export function AppSidebar() {
               <AvatarFallback
                 className="text-xs font-medium"
                 style={{
-                  background: `hsl(${getDeptColor(user.departmentId)} / 0.15)`,
-                  color: `hsl(${getDeptColor(user.departmentId)})`,
+                  background: `hsl(${getDeptColor(user.departmentId, departments)} / 0.15)`,
+                  color: `hsl(${getDeptColor(user.departmentId, departments)})`,
                 }}
               >
                 {getInitials(user.name)}
@@ -110,7 +110,7 @@ export function AppSidebar() {
             </Avatar>
             <div
               className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 h-[3px] w-5 rounded-full"
-              style={{ background: `hsl(${getDeptColor(user.departmentId)})` }}
+              style={{ background: `hsl(${getDeptColor(user.departmentId, departments)})` }}
             />
           </div>
           <div className="flex flex-1 flex-col min-w-0 group-data-[collapsible=icon]:hidden">
