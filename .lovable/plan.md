@@ -1,28 +1,56 @@
-## Plan: Add "Resolver Tarefa" Option to Task Detail Dialog
+
+
+## Plan: Add Attachments to Feedback
 
 ### Overview
 
-Add a "Resolver Tarefa" menu item to the three-dots dropdown in `TaskDetailDialog`. Clicking it opens a confirmation dialog with optional feedback form. Confirming marks the task as completed.
+Allow users to attach files (images, documents) when submitting feedback — both in the inline feedback form and the "Resolver Tarefa" dialog. Existing feedbacks with attachments display clickable file links for viewing/downloading.
+
+Since there's no backend, attachments will be stored as in-memory object URLs from `File` objects, with metadata saved on the `Feedback` type.
 
 ### Changes
 
+**1. Update `Feedback` type**
+
+**File:** `src/types/index.ts`
+
+Add an `attachments` field to the `Feedback` interface:
+
+```ts
+export interface FeedbackAttachment {
+  name: string;
+  url: string;     // object URL or data URL
+  type: string;    // MIME type
+  size: number;
+}
+
+export interface Feedback {
+  // ... existing fields
+  attachments?: FeedbackAttachment[];
+}
+```
+
+**2. Update `addFeedback` in AppContext**
+
+**File:** `src/context/AppContext.tsx`
+
+Update the `Omit` type for `addFeedback` to pass through `attachments`. No logic change needed — it already spreads `...fb` into the new feedback object.
+
+**3. Add attachment UI to TaskDetailDialog**
+
 **File:** `src/components/TaskDetailDialog.tsx`
 
-1. **New state:** `confirmResolve: boolean` (similar to `confirmDelete`)
-2. **New menu item:** Add "Resolver Tarefa" between "Editar" and "Excluir" in the `DropdownMenu`, with a `CheckCircle` icon. Only shown when `!task.completed`.
-3. **Resolve confirmation dialog:** A new `AlertDialog` (similar to the delete one) with:
-  - Title: "Deseja finalizar chamado?"
-  - Embedded feedback form (topic, type, comment, anonymous toggle) — same fields as the existing "Adicionar Feedback" section (ensure same visual formatting).
-  - Two buttons: **Sim** (submits optional feedback if filled + marks task complete) and **Não** (cancels)
-4. **Handle resolve:** `handleResolve` function that:
-  - If feedback fields are filled, calls `addFeedback()`
-  - Calls `toggleTaskCompletion(taskId)`
-  - Closes the resolve dialog
-  - Shows a success toast
+- **State**: Add `fbAttachments: File[]` and `resolveFbAttachments: File[]`
+- **Import**: Add `Paperclip`, `Download`, `FileText`, `Image` from lucide-react
+- **Feedback form** (both inline and resolve dialog): Add a paperclip button that triggers a hidden `<input type="file" multiple>`. Show attached file names as removable chips below the comment field.
+- **Submit logic**: Convert `File[]` to `FeedbackAttachment[]` using `URL.createObjectURL()` before passing to `addFeedback`.
+- **Feedback history**: For each feedback with attachments, render clickable file items (icon + name) that open in a new tab (`window.open(url)`) or trigger download via an `<a download>` link.
 
 ### Files Changed
 
+| File | Change |
+|------|--------|
+| `src/types/index.ts` | Add `FeedbackAttachment` interface and `attachments?` field to `Feedback` |
+| `src/context/AppContext.tsx` | Ensure `attachments` passes through in `addFeedback` |
+| `src/components/TaskDetailDialog.tsx` | Attachment input, chips, and download links in both feedback forms and history |
 
-| File                                  | Change                                                                   |
-| ------------------------------------- | ------------------------------------------------------------------------ |
-| `src/components/TaskDetailDialog.tsx` | Add `confirmResolve` state, menu item, resolve dialog with feedback form |
