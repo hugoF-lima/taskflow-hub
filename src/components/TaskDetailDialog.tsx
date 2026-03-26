@@ -133,17 +133,21 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     onOpenChange(false);
   };
 
+  const filesToAttachments = (files: File[]): FeedbackAttachment[] =>
+    files.map(f => ({ name: f.name, url: URL.createObjectURL(f), type: f.type, size: f.size }));
+
   const handleFeedbackSubmit = () => {
     if (!fbTopic || !fbType) return;
-    addFeedback(taskId, { topic: fbTopic, type: fbType, comment: fbComment || undefined, anonymous: fbAnonymous, authorId: fbAnonymous ? undefined : 'u1' });
+    addFeedback(taskId, { topic: fbTopic, type: fbType, comment: fbComment || undefined, anonymous: fbAnonymous, authorId: fbAnonymous ? undefined : 'u1', attachments: fbAttachments.length > 0 ? filesToAttachments(fbAttachments) : undefined });
     setFbTopic('');
     setFbType('');
     setFbComment('');
+    setFbAttachments([]);
   };
 
   const handleResolve = () => {
     if (resolveFbTopic && resolveFbType) {
-      addFeedback(taskId, { topic: resolveFbTopic, type: resolveFbType, comment: resolveFbComment || undefined, anonymous: resolveFbAnonymous, authorId: resolveFbAnonymous ? undefined : 'u1' });
+      addFeedback(taskId, { topic: resolveFbTopic, type: resolveFbType, comment: resolveFbComment || undefined, anonymous: resolveFbAnonymous, authorId: resolveFbAnonymous ? undefined : 'u1', attachments: resolveFbAttachments.length > 0 ? filesToAttachments(resolveFbAttachments) : undefined });
     }
     toggleTaskCompletion(taskId);
     setConfirmResolve(false);
@@ -151,6 +155,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     setResolveFbType('');
     setResolveFbComment('');
     setResolveFbAnonymous(true);
+    setResolveFbAttachments([]);
     toast({ title: 'Chamado finalizado', description: `"${task.title}" foi marcado como concluído.` });
     onOpenChange(false);
   };
