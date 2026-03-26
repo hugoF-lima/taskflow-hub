@@ -1,113 +1,99 @@
 
 
-## Plan: Supabase SQL Database Schema + Seed Data
+## Plan: Migrate App from Mock Data to Supabase Backend with Real Auth
 
 ### Overview
 
-Create the full database schema in Supabase matching the existing app models (departments, profiles, tasks, task_assignees, feedback, feedback_attachments, user_roles, user_department_visibility, pending_registrations), with enums, RLS policies, and seed data from mock. All task deadlines will be pushed to April 2026+.
+Replace the in-memory mock data system with real Supabase Auth and database queries. This involves: implementing Supabase Auth (email/password), creating a profile trigger for auto-creation, building data hooks to fetch from Supabase, and updating all 12 components that currently import from `mockData.ts`.
 
-### Schema Design
+### Database Changes (Migration)
 
-```text
-┌─────────────────┐     ┌──────────────────┐     ┌──────────────────────────┐
-│  departments    │◄────│  profiles        │     │  user_roles              │
-│  id (text PK)   │     │  id (uuid PK/FK) │────►│  user_id (uuid FK)       │
-│  name           │     │  name            │     │  role (app_role enum)     │
-│  color          │     │  department_id   │     └──────────────────────────┘
-└─────────────────┘     │  avatar_url      │
-        ▲               │  email           │     ┌──────────────────────────┐
-        │               └──────────────────┘────►│  user_department_visibility│
-        │                       ▲                │  user_id (uuid FK)       │
-        │                       │                │  department_id (text FK) │
-        │               ┌──────────────────┐     └──────────────────────────┘
-        │               │  tasks           │
-        └───────────────│  department_id?  │     ┌──────────────────────────┐
-                        │  id (uuid PK)    │────►│  task_assignees          │
-                        │  code, title     │     │  task_id (uuid FK)       │
-                        │  deadline        │     │  user_id (uuid FK)       │
-                        │  urgency (enum)  │     └──────────────────────────┘
-                        │  important       │
-                        │  process         │     ┌──────────────────────────┐
-                        │  completed       │────►│  feedback                │
-                        │  created_by (FK) │     │  task_id (uuid FK)       │
-                        └──────────────────┘     │  topic (enum)            │
-                                                 │  type (enum)             │
-                                                 │  comment, anonymous      │
-                                                 │  author_id (uuid FK)     │
-                                                 └──────────┬───────────────┘
-                                                            │
-                                                 ┌──────────▼───────────────┐
-                                                 │  feedback_attachments    │
-                                                 │  feedback_id (uuid FK)   │
-                                                 │  name, url, type, size   │
-                                                 └──────────────────────────┘
+1. **Add INSERT policy on `profiles`** so the trigger can create profiles on signup
+2. **Add INSERT/UPDATE policies on `user_roles` and `user_department_visibility`** for admin management
+3. **Create trigger** on `auth.users` to auto-create a `profiles` row on signup
+4. **Fix the tasks UPDATE RLS policy** — current policy has a bug: `task_assignees.task_id = task_assignees.id` should be `task_assignees.task_id = tasks.id`
 
-┌──────────────────────────┐
-│  pending_registrations   │
-│  id (uuid PK)            │
-│  name, email             │
-│  department_id (text FK) │
-│  status                  │
-└──────────────────────────┘
-```
+### Code Changes
 
-### Migration 1: Schema (enums, tables, RLS)
-
-**Enums:**
-- `app_role` = ('admin', 'user')
-- `urgency_level` = ('normal', 'medium', 'critical', 'critical24h', 'report')
-- `feedback_topic` = ('Organização', 'Comunicação', 'Pro atividade', 'Prioridades', 'ICC', 'KISS', 'Reportar problemas')
-- `feedback_type` = ('precisa mais atenção', 'precisa um pouco mais de atenção', 'mandou bem!', 'cooperação')
-
-**Tables:**
-1. `departments` -- text PK (e.g. 'comercial'), name, color
-2. `profiles` -- uuid PK references auth.users, name, email, department_id FK, avatar_url
-3. `user_roles` -- uuid PK, user_id FK (unique), role (app_role)
-4. `user_department_visibility` -- uuid PK, user_id FK, department_id FK (unique pair)
-5. `tasks` -- uuid PK, code (unique), title, deadline, urgency, important, process, observations, completed, completed_at, created_at, created_by FK profiles
-6. `task_assignees` -- uuid PK, task_id FK, user_id FK (unique pair)
-7. `feedback` -- uuid PK, task_id FK, topic, type, comment, anonymous, author_id FK, created_at
-8. `feedback_attachments` -- uuid PK, feedback_id FK, name, url, type, size
-9. `pending_registrations` -- uuid PK, name, email, department_id FK, status text default 'pending', created_at
-
-**Security definer function:**
-- `has_role(uuid, app_role)` for RLS without recursion
-
-**RLS policies:**
-- `departments`: SELECT for all authenticated
-- `profiles`: SELECT for authenticated; UPDATE own row
-- `user_roles`: SELECT via has_role or own row
-- `tasks`: SELECT for authenticated users whose visible departments include the task's assignees' departments; INSERT/UPDATE/DELETE gated by creator/assignee or admin
-- `task_assignees`, `feedback`, `feedback_attachments`: SELECT for authenticated; INSERT for authenticated; UPDATE/DELETE restricted
-- `pending_registrations`: INSERT for anon+authenticated; SELECT/UPDATE for admins
-
-### Migration 2: Seed Data (via insert tool)
-
-**Departments:** 6 rows matching mock (comercial, informatica, expedicao, almoxarifado, processos, rh)
-
-**Profiles:** 12 rows with deterministic UUIDs (using `gen_random_uuid()` or fixed UUIDs for FK consistency)
-
-Since we need FK consistency across profiles, tasks, assignees, and feedback, we'll use fixed UUIDs for the 12 mock users. Example pattern: `00000000-0000-0000-0000-000000000001` through `...000000000012`.
-
-**User roles:** Carlos (u1) = admin, all others = user
-
-**User department visibility:** Carlos gets all 6 departments. Bruno gets only 'informatica'. Others get their own department.
-
-**Tasks:** 37 tasks with deadlines shifted so the base date is April 10, 2026 (instead of March 24). This ensures all deadlines are April 2026+. Tasks with negative offsets (e.g. -3) become April 7, still past April 1. Completed tasks get completed_at in late March 2026.
-
-**Task assignees:** One row per task linking to the assignee.
-
-**Feedback:** All mock feedback entries, with created_at dates in March 2026.
-
-### Files Changed
+**Phase 1: Auth Layer**
 
 | File | Change |
 |------|--------|
-| Supabase migration | Schema: enums, 9 tables, `has_role` function, RLS policies |
-| Supabase insert | Seed data: departments, profiles, user_roles, visibility, tasks, assignees, feedback |
+| `src/context/AuthContext.tsx` | Replace mock credentials with Supabase Auth (`signInWithPassword`, `signUp`, `signOut`, `onAuthStateChange`). Fetch profile, role, and visible departments from DB. Keep `canActOnTask` logic. |
+| `src/pages/Login.tsx` | Call `supabase.auth.signInWithPassword` and `supabase.auth.signUp`. Registration now creates a real auth user + pending_registration row. |
+| `src/App.tsx` | Use `onAuthStateChange` listener to gate auth. Set up listener before `getSession()`. |
+
+**Phase 2: Data Hooks**
+
+| File | Change |
+|------|--------|
+| `src/hooks/useSupabaseData.ts` (new) | Custom hook that fetches departments, profiles, tasks (with assignees and feedback) from Supabase. Exposes `departments`, `users`, `tasks`, `allProcesses`. Includes mutation functions (`addTask`, `updateTask`, `deleteTask`, `toggleCompletion`, `toggleImportance`, `addFeedback`). |
+| `src/context/AppContext.tsx` | Replace `initialTasks` and `users` imports with data from `useSupabaseData`. Remove direct state for tasks; delegate mutations to the hook. |
+
+**Phase 3: Update All Components (12 files)**
+
+Every file that imports from `@/data/mockData` will be updated to get data from context or the hook instead:
+
+- `AppSidebar.tsx` — get `users`, `departments` from context
+- `TaskCard.tsx` — get `users`, `departments`, `urgencyConfig` from context
+- `TaskDetailDialog.tsx` — same
+- `NewTaskDialog.tsx` — same
+- `FilterBar.tsx` — get `departments`, `allProcesses` from context
+- `ManageAccessDialog.tsx` — get `departments` from context; call Supabase for pending registrations and approval
+- `UserAvatarMenu.tsx` — get `departments` from context
+- `Login.tsx` — fetch departments from Supabase (no auth needed for department list)
+- `CardView.tsx` — get from context
+- `ListView.tsx` — get from context
+- `FeedbackModal.tsx` — already uses context for `addFeedback`
+
+`urgencyConfig` is UI-only config (labels/colors) — keep it as a local constant (move to a shared utils file or keep in mockData as a config-only export).
+
+**Phase 4: ManageAccessDialog — Real Admin Workflow**
+
+- Fetch `pending_registrations` from Supabase
+- On approve: call an edge function that creates the auth user (using service role), inserts profile, role, and department visibility rows, then updates the pending_registration status
+- List existing users from `profiles` + `user_roles` tables
+
+### Edge Function: `approve-registration`
+
+Needed because creating auth users requires the service role key (cannot be done client-side):
+- Receives: `registrationId`, `visibleDepartments[]`, `password`
+- Uses `SUPABASE_SERVICE_ROLE_KEY` to call `auth.admin.createUser`
+- Inserts into `profiles`, `user_roles`, `user_department_visibility`
+- Updates `pending_registrations.status = 'approved'`
+
+### Security Fixes
+
+1. **Tasks UPDATE policy bug**: `task_assignees.task_id = task_assignees.id` → `task_assignees.task_id = tasks.id`
+2. **Add missing INSERT policy on `user_department_visibility`** for admin operations
+3. **Add missing INSERT policy on `user_roles`** for admin operations
+4. **Profiles INSERT policy**: Allow via trigger (service role) or add `WITH CHECK (id = auth.uid())`
+
+### Files Changed Summary
+
+| File | Change |
+|------|--------|
+| Supabase migration | Fix tasks UPDATE policy, add INSERT policies, create auth trigger |
+| `supabase/functions/approve-registration/` | New edge function for admin user creation |
+| `src/context/AuthContext.tsx` | Full rewrite: Supabase Auth |
+| `src/context/AppContext.tsx` | Use Supabase data instead of mock imports |
+| `src/hooks/useSupabaseData.ts` | New: fetch all data from Supabase |
+| `src/pages/Login.tsx` | Use Supabase Auth calls |
+| `src/App.tsx` | Auth state listener |
+| `src/components/AppSidebar.tsx` | Get data from context |
+| `src/components/TaskCard.tsx` | Get data from context |
+| `src/components/TaskDetailDialog.tsx` | Get data from context |
+| `src/components/NewTaskDialog.tsx` | Get data from context |
+| `src/components/FilterBar.tsx` | Get data from context |
+| `src/components/ManageAccessDialog.tsx` | Supabase queries + edge function call |
+| `src/components/UserAvatarMenu.tsx` | Get data from context |
+| `src/components/views/CardView.tsx` | Get data from context |
+| `src/components/views/ListView.tsx` | Get data from context |
+| `src/data/mockData.ts` | Keep only `urgencyConfig` constant; remove everything else |
 
 ### Notes
-- No code changes to the app in this step -- this is schema-only preparation for future backend migration
-- Profiles table uses fixed UUIDs (not tied to auth.users yet) so seed data works without real Supabase Auth accounts. When auth is implemented, these will be linked
-- The `code` column on tasks auto-generates via a sequence or is inserted manually matching the GAP-XXXX pattern
+
+- The 12 seed profiles use deterministic UUIDs not linked to auth.users. After migration, real auth users will be created fresh. The seed data serves as a reference but real usage starts with admin creating accounts via the approval flow.
+- `onAuthStateChange` listener is set up BEFORE `getSession()` per Supabase best practices.
+- Email confirmation can be disabled initially in Supabase Auth settings for easier testing.
 
