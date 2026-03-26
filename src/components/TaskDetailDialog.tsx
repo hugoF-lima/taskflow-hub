@@ -419,6 +419,24 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                         </div>
                         <p className="text-xs font-medium">{fb.type}</p>
                         {fb.comment && <p className="text-[11px] text-muted-foreground leading-relaxed">{fb.comment}</p>}
+                        {fb.attachments && fb.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {fb.attachments.map((att, i) => (
+                              <a
+                                key={i}
+                                href={att.url}
+                                download={att.name}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline bg-primary/10 rounded px-1.5 py-0.5"
+                              >
+                                {att.type.startsWith('image/') ? <ImageIcon className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                                {att.name}
+                                <Download className="h-2.5 w-2.5" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                         <p className="text-[10px] text-muted-foreground/60">{fb.anonymous ? 'Anônimo' : 'Identificado'}</p>
                       </div>
                     ))}
