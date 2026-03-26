@@ -1,56 +1,24 @@
 
 
-## Plan: Add Attachments to Feedback
+## Plan: Image Attachment Preview in Feedback History
 
 ### Overview
 
-Allow users to attach files (images, documents) when submitting feedback — both in the inline feedback form and the "Resolver Tarefa" dialog. Existing feedbacks with attachments display clickable file links for viewing/downloading.
-
-Since there's no backend, attachments will be stored as in-memory object URLs from `File` objects, with metadata saved on the `Feedback` type.
+Replace download-only links for image attachments with inline thumbnail previews. Clicking a thumbnail opens a full-size lightbox overlay. Non-image attachments keep the current download link behavior.
 
 ### Changes
 
-**1. Update `Feedback` type**
-
-**File:** `src/types/index.ts`
-
-Add an `attachments` field to the `Feedback` interface:
-
-```ts
-export interface FeedbackAttachment {
-  name: string;
-  url: string;     // object URL or data URL
-  type: string;    // MIME type
-  size: number;
-}
-
-export interface Feedback {
-  // ... existing fields
-  attachments?: FeedbackAttachment[];
-}
-```
-
-**2. Update `addFeedback` in AppContext**
-
-**File:** `src/context/AppContext.tsx`
-
-Update the `Omit` type for `addFeedback` to pass through `attachments`. No logic change needed — it already spreads `...fb` into the new feedback object.
-
-**3. Add attachment UI to TaskDetailDialog**
-
 **File:** `src/components/TaskDetailDialog.tsx`
 
-- **State**: Add `fbAttachments: File[]` and `resolveFbAttachments: File[]`
-- **Import**: Add `Paperclip`, `Download`, `FileText`, `Image` from lucide-react
-- **Feedback form** (both inline and resolve dialog): Add a paperclip button that triggers a hidden `<input type="file" multiple>`. Show attached file names as removable chips below the comment field.
-- **Submit logic**: Convert `File[]` to `FeedbackAttachment[]` using `URL.createObjectURL()` before passing to `addFeedback`.
-- **Feedback history**: For each feedback with attachments, render clickable file items (icon + name) that open in a new tab (`window.open(url)`) or trigger download via an `<a download>` link.
+1. **Add state:** `previewImage: string | null` for the lightbox URL
+
+2. **Replace attachment rendering** (lines 422-438): For image attachments (`att.type.startsWith('image/')`), render an `<img>` thumbnail (e.g., 64×64, `object-cover`, rounded, cursor-pointer). Clicking sets `previewImage = att.url`. Non-image files keep the existing download link.
+
+3. **Add lightbox dialog:** A simple `Dialog` that shows the full-size image when `previewImage` is set, with a download button. Closing resets `previewImage` to null.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/types/index.ts` | Add `FeedbackAttachment` interface and `attachments?` field to `Feedback` |
-| `src/context/AppContext.tsx` | Ensure `attachments` passes through in `addFeedback` |
-| `src/components/TaskDetailDialog.tsx` | Attachment input, chips, and download links in both feedback forms and history |
+| `src/components/TaskDetailDialog.tsx` | Image thumbnails, lightbox dialog, `previewImage` state |
 
