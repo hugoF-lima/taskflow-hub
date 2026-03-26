@@ -32,6 +32,13 @@ export interface User {
   departmentId: string;
 }
 
+export interface FeedbackAttachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 export interface Feedback {
   id: string;
   taskId: string;
@@ -41,6 +48,7 @@ export interface Feedback {
   anonymous: boolean;
   authorId?: string;
   createdAt: string;
+  attachments?: FeedbackAttachment[];
 }
 
 export interface Task {

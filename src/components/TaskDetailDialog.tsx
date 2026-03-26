@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { users, departments, allProcesses, urgencyConfig } from '@/data/mockData';
-import { Task, UrgencyLevel, FeedbackTopic, FeedbackType } from '@/types';
+import { Task, UrgencyLevel, FeedbackTopic, FeedbackType, FeedbackAttachment } from '@/types';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
@@ -24,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check, Clock, CheckCircle } from 'lucide-react';
+import { CalendarIcon, MoreVertical, Pencil, Trash2, Send, MessageSquare, X, Check, Clock, CheckCircle, Paperclip, Download, FileText, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -68,6 +68,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [fbType, setFbType] = useState<FeedbackType | ''>('');
   const [fbComment, setFbComment] = useState('');
   const [fbAnonymous, setFbAnonymous] = useState(true);
+  const [fbAttachments, setFbAttachments] = useState<File[]>([]);
+  const [resolveFbAttachments, setResolveFbAttachments] = useState<File[]>([]);
 
   useEffect(() => {
     if (task && open) {
@@ -131,17 +133,21 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     onOpenChange(false);
   };
 
+  const filesToAttachments = (files: File[]): FeedbackAttachment[] =>
+    files.map(f => ({ name: f.name, url: URL.createObjectURL(f), type: f.type, size: f.size }));
+
   const handleFeedbackSubmit = () => {
     if (!fbTopic || !fbType) return;
-    addFeedback(taskId, { topic: fbTopic, type: fbType, comment: fbComment || undefined, anonymous: fbAnonymous, authorId: fbAnonymous ? undefined : 'u1' });
+    addFeedback(taskId, { topic: fbTopic, type: fbType, comment: fbComment || undefined, anonymous: fbAnonymous, authorId: fbAnonymous ? undefined : 'u1', attachments: fbAttachments.length > 0 ? filesToAttachments(fbAttachments) : undefined });
     setFbTopic('');
     setFbType('');
     setFbComment('');
+    setFbAttachments([]);
   };
 
   const handleResolve = () => {
     if (resolveFbTopic && resolveFbType) {
-      addFeedback(taskId, { topic: resolveFbTopic, type: resolveFbType, comment: resolveFbComment || undefined, anonymous: resolveFbAnonymous, authorId: resolveFbAnonymous ? undefined : 'u1' });
+      addFeedback(taskId, { topic: resolveFbTopic, type: resolveFbType, comment: resolveFbComment || undefined, anonymous: resolveFbAnonymous, authorId: resolveFbAnonymous ? undefined : 'u1', attachments: resolveFbAttachments.length > 0 ? filesToAttachments(resolveFbAttachments) : undefined });
     }
     toggleTaskCompletion(taskId);
     setConfirmResolve(false);
@@ -149,6 +155,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     setResolveFbType('');
     setResolveFbComment('');
     setResolveFbAnonymous(true);
+    setResolveFbAttachments([]);
     toast({ title: 'Chamado finalizado', description: `"${task.title}" foi marcado como concluído.` });
     onOpenChange(false);
   };
@@ -412,6 +419,24 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                         </div>
                         <p className="text-xs font-medium">{fb.type}</p>
                         {fb.comment && <p className="text-[11px] text-muted-foreground leading-relaxed">{fb.comment}</p>}
+                        {fb.attachments && fb.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {fb.attachments.map((att, i) => (
+                              <a
+                                key={i}
+                                href={att.url}
+                                download={att.name}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline bg-primary/10 rounded px-1.5 py-0.5"
+                              >
+                                {att.type.startsWith('image/') ? <ImageIcon className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                                {att.name}
+                                <Download className="h-2.5 w-2.5" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                         <p className="text-[10px] text-muted-foreground/60">{fb.anonymous ? 'Anônimo' : 'Identificado'}</p>
                       </div>
                     ))}
@@ -457,6 +482,26 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                     placeholder="Observações sobre o feedback..."
                   />
                   <p className="text-[10px] text-muted-foreground text-right">{fbComment.length}/450</p>
+                </div>
+                {/* Attachments */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => document.getElementById('fb-file-input')?.click()}>
+                      <Paperclip className="h-3 w-3" /> Anexar arquivo
+                    </Button>
+                    <input id="fb-file-input" type="file" multiple className="hidden" onChange={e => { if (e.target.files) { setFbAttachments(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ''; } }} />
+                  </div>
+                  {fbAttachments.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {fbAttachments.map((f, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 text-[10px] bg-muted rounded px-2 py-0.5">
+                          <Paperclip className="h-2.5 w-2.5" />
+                          {f.name}
+                          <button type="button" onClick={() => setFbAttachments(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -530,6 +575,26 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 placeholder="Observações sobre o feedback..."
               />
               <p className="text-[10px] text-muted-foreground text-right">{resolveFbComment.length}/450</p>
+            </div>
+            {/* Resolve Attachments */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => document.getElementById('resolve-file-input')?.click()}>
+                  <Paperclip className="h-3 w-3" /> Anexar arquivo
+                </Button>
+                <input id="resolve-file-input" type="file" multiple className="hidden" onChange={e => { if (e.target.files) { setResolveFbAttachments(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ''; } }} />
+              </div>
+              {resolveFbAttachments.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {resolveFbAttachments.map((f, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 text-[10px] bg-muted rounded px-2 py-0.5">
+                      <Paperclip className="h-2.5 w-2.5" />
+                      {f.name}
+                      <button type="button" onClick={() => setResolveFbAttachments(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Switch id="anonResolve" checked={resolveFbAnonymous} onCheckedChange={setResolveFbAnonymous} />
