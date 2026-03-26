@@ -483,6 +483,26 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                   />
                   <p className="text-[10px] text-muted-foreground text-right">{fbComment.length}/450</p>
                 </div>
+                {/* Attachments */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => document.getElementById('fb-file-input')?.click()}>
+                      <Paperclip className="h-3 w-3" /> Anexar arquivo
+                    </Button>
+                    <input id="fb-file-input" type="file" multiple className="hidden" onChange={e => { if (e.target.files) { setFbAttachments(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ''; } }} />
+                  </div>
+                  {fbAttachments.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {fbAttachments.map((f, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 text-[10px] bg-muted rounded px-2 py-0.5">
+                          <Paperclip className="h-2.5 w-2.5" />
+                          {f.name}
+                          <button type="button" onClick={() => setFbAttachments(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Switch id="anonDetail" checked={fbAnonymous} onCheckedChange={setFbAnonymous} />
@@ -555,6 +575,26 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 placeholder="Observações sobre o feedback..."
               />
               <p className="text-[10px] text-muted-foreground text-right">{resolveFbComment.length}/450</p>
+            </div>
+            {/* Resolve Attachments */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => document.getElementById('resolve-file-input')?.click()}>
+                  <Paperclip className="h-3 w-3" /> Anexar arquivo
+                </Button>
+                <input id="resolve-file-input" type="file" multiple className="hidden" onChange={e => { if (e.target.files) { setResolveFbAttachments(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ''; } }} />
+              </div>
+              {resolveFbAttachments.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {resolveFbAttachments.map((f, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 text-[10px] bg-muted rounded px-2 py-0.5">
+                      <Paperclip className="h-2.5 w-2.5" />
+                      {f.name}
+                      <button type="button" onClick={() => setResolveFbAttachments(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Switch id="anonResolve" checked={resolveFbAnonymous} onCheckedChange={setResolveFbAnonymous} />
