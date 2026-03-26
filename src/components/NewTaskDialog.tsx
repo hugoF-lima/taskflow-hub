@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { users, departments, allProcesses, urgencyConfig } from '@/data/mockData';
 import { UrgencyLevel } from '@/types';
 import {
@@ -35,7 +36,7 @@ interface NewTaskDialogProps {
 
 export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
   const { addTask } = useAppContext();
-
+  const { currentUser } = useAuth();
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [deadline, setDeadline] = useState<Date | undefined>();
   const [deadlineTime, setDeadlineTime] = useState('18:00');
@@ -85,6 +86,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
       process,
       observations,
       completed: false,
+      createdBy: currentUser?.id || 'u1',
     });
     toast.success('Atividade criada com sucesso!');
 

@@ -1,6 +1,7 @@
 /* v2 */ import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { Task, Feedback, AppFilters, SidebarMode, AppSettings, ViewMode, UrgencyLevel, FeedbackTopic, TaskStatus } from '@/types';
 import { tasks as initialTasks, users } from '@/data/mockData';
+import { useAuth } from '@/context/AuthContext';
 
 interface AppContextType {
   tasks: Task[];
@@ -165,8 +166,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTasks(prev => prev.filter(t => t.id !== taskId));
   }, []);
 
+  const { permissions } = useAuth();
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
+      // Department visibility filter based on permissions
+      if (permissions && permissions.visibleDepartments !== 'all') {
+        const taskUsers = task.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
+        if (taskUsers.length > 0 && !taskUsers.some(u => permissions.visibleDepartments.includes(u!.departmentId))) return false;
+      }
+
       // Isolate mode
       if (sidebarMode === 'isolate' && selectedUserId && !task.assigneeIds.includes(selectedUserId)) return false;
 
@@ -195,7 +204,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       return true;
     });
-  }, [tasks, filters, sidebarMode, selectedUserId, getTaskStatus, searchQuery]);
+  }, [tasks, filters, sidebarMode, selectedUserId, getTaskStatus, searchQuery, permissions]);
 
   const value = useMemo(() => ({
     tasks, filters, setFilter, resetFilters,
