@@ -1,5 +1,6 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback } from 'react';
 import { users, departments } from '@/data/mockData';
+import { Separator } from '@/components/ui/separator';
 import { useAppContext } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import {
