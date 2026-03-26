@@ -90,8 +90,7 @@ export function AppSidebar() {
           tooltip={label || user.name}
           className={cn(
             'h-12 px-3 transition-all',
-            isSelected && sidebarMode === 'isolate' && 'ring-1 ring-sidebar-primary',
-            highlight && 'bg-primary/10 ring-2 ring-primary/40'
+            isSelected && sidebarMode === 'isolate' && 'ring-1 ring-sidebar-primary'
           )}
         >
           <div className="relative">
