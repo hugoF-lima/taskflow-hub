@@ -134,11 +134,14 @@ export function AppSidebar() {
           <span className="text-sm font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
             Equipe
           </span>
-          {sidebarMode !== 'none' && (
+          {(sidebarMode !== 'none' || filters.departmentId) && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={clearUserSelection}
+              onClick={() => {
+                clearUserSelection();
+                setFilter('departmentId', null);
+              }}
               className="ml-auto text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent h-7 group-data-[collapsible=icon]:hidden"
             >
               Mostrar todos
