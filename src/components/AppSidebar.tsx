@@ -167,25 +167,28 @@ export function AppSidebar() {
             return (
               <Collapsible key={dept.id} defaultOpen>
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
+                  <div
+                    className={cn(
+                      'flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 transition-colors',
+                      isActiveDept && 'text-sidebar-foreground bg-sidebar-accent/50 rounded-md'
+                    )}
+                  >
                     <button
-                      className={cn(
-                        'flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors group/dept',
-                        isActiveDept && 'text-sidebar-foreground bg-sidebar-accent/50 rounded-md'
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeptClick(dept.id);
-                      }}
+                      className="flex items-center gap-2 min-w-0 flex-1 hover:text-sidebar-foreground transition-colors"
+                      onClick={() => handleDeptClick(dept.id)}
                     >
                       <div
                         className="h-2 w-2 rounded-full shrink-0"
                         style={{ background: `hsl(${dept.color})` }}
                       />
                       <span className="group-data-[collapsible=icon]:hidden truncate">{dept.name}</span>
-                      <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 transition-transform group-data-[collapsible=icon]:hidden [[data-state=closed]_&]:rotate-[-90deg]" />
                     </button>
-                  </CollapsibleTrigger>
+                    <CollapsibleTrigger asChild>
+                      <button className="shrink-0 hover:text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden" onClick={(e) => e.stopPropagation()}>
+                        <ChevronDown className="h-3.5 w-3.5 transition-transform [[data-state=closed]_&]:rotate-[-90deg]" />
+                      </button>
+                    </CollapsibleTrigger>
+                  </div>
                 </SidebarMenuItem>
                 <CollapsibleContent>
                   {deptUsers.map(user => renderUserItem(user))}
