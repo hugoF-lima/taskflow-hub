@@ -1,10 +1,14 @@
-/* v2 */ import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { Task, Feedback, AppFilters, SidebarMode, AppSettings, ViewMode, UrgencyLevel, FeedbackTopic, TaskStatus } from '@/types';
-import { tasks as initialTasks, users } from '@/data/mockData';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { Task, Feedback, AppFilters, SidebarMode, AppSettings, ViewMode, UrgencyLevel, FeedbackTopic, TaskStatus, Department, User } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 
 interface AppContextType {
   tasks: Task[];
+  departments: Department[];
+  users: User[];
+  allProcesses: string[];
+  dataLoading: boolean;
   filters: AppFilters;
   setFilter: <K extends keyof AppFilters>(key: K, value: AppFilters[K]) => void;
   resetFilters: () => void;
@@ -51,7 +55,9 @@ export function useAppContext() {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const sbData = useSupabaseData();
+  const { tasks, departments, users, allProcesses, loading: dataLoading } = sbData;
+
   const [filters, setFilters] = useState<AppFilters>(defaultFilters);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>('none');
@@ -113,72 +119,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addFeedback = useCallback((taskId: string, fb: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>) => {
-    setTasks(prev => prev.map(t => {
-      if (t.id !== taskId) return t;
-      return {
-        ...t,
-        feedback: [...t.feedback, {
-          ...fb,
-          id: `fb-${Date.now()}`,
-          taskId,
-          createdAt: new Date().toISOString(),
-        }],
-      };
-    }));
-  }, []);
+    sbData.addFeedback(taskId, fb);
+  }, [sbData]);
 
   const toggleTaskCompletion = useCallback((taskId: string): boolean => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return false;
     if (!task.completed && settings.feedbackRequired && task.feedback.length === 0) {
-      return false; // blocked
+      return false;
     }
-    setTasks(prev => prev.map(t => {
-      if (t.id !== taskId) return t;
-      return { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : undefined };
-    }));
+    sbData.toggleCompletion(taskId);
     return true;
-  }, [tasks, settings.feedbackRequired]);
+  }, [tasks, settings.feedbackRequired, sbData]);
 
   const toggleTaskImportance = useCallback((taskId: string) => {
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, important: !t.important } : t));
-  }, []);
+    sbData.toggleImportance(taskId);
+  }, [sbData]);
 
   const addTask = useCallback((taskData: Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>) => {
-    setTasks(prev => {
-      const nextNum = prev.length + 1;
-      const newTask: Task = {
-        ...taskData,
-        id: `t${Date.now()}`,
-        code: `GAP-${String(nextNum).padStart(4, '0')}`,
-        createdAt: new Date().toISOString(),
-        feedback: [],
-      };
-      return [...prev, newTask];
-    });
-  }, []);
+    sbData.addTask(taskData);
+  }, [sbData]);
 
   const updateTask = useCallback((taskId: string, updates: Partial<Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>>) => {
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
-  }, []);
+    sbData.updateTask(taskId, updates);
+  }, [sbData]);
 
   const deleteTask = useCallback((taskId: string) => {
-    setTasks(prev => prev.filter(t => t.id !== taskId));
-  }, []);
+    sbData.deleteTask(taskId);
+  }, [sbData]);
 
   const { permissions } = useAuth();
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
-      // Department visibility filter based on permissions
       if (permissions && permissions.visibleDepartments !== 'all') {
         const taskUsers = task.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
         if (taskUsers.length > 0 && !taskUsers.some(u => permissions.visibleDepartments.includes(u!.departmentId))) return false;
       }
-
-      // Isolate mode
       if (sidebarMode === 'isolate' && selectedUserId && !task.assigneeIds.includes(selectedUserId)) return false;
-
       if (filters.departmentId) {
         const taskUsers = task.assigneeIds.map(id => users.find(u => u.id === id)).filter(Boolean);
         if (taskUsers.length > 0 && !taskUsers.some(u => u!.departmentId === filters.departmentId)) return false;
@@ -194,26 +172,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       if (filters.dateRange.from && new Date(task.deadline) < filters.dateRange.from) return false;
       if (filters.dateRange.to && new Date(task.deadline) > filters.dateRange.to) return false;
-
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const match = [task.title, task.code, task.process, task.observations ?? '']
           .some(field => field.toLowerCase().includes(q));
         if (!match) return false;
       }
-
       return true;
     });
-  }, [tasks, filters, sidebarMode, selectedUserId, getTaskStatus, searchQuery, permissions]);
+  }, [tasks, filters, sidebarMode, selectedUserId, getTaskStatus, searchQuery, permissions, users]);
 
   const value = useMemo(() => ({
-    tasks, filters, setFilter, resetFilters,
+    tasks, departments, users, allProcesses, dataLoading,
+    filters, setFilter, resetFilters,
     selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection,
     viewMode, setViewMode, settings, toggleSetting,
     addFeedback, addTask, updateTask, deleteTask, toggleTaskCompletion, toggleTaskImportance,
     filteredTasks, getTaskStatus, zoomLevel, setZoomLevel,
     searchQuery, setSearchQuery, searchOpen, setSearchOpen,
-  }), [tasks, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, addTask, updateTask, deleteTask, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel, searchQuery, setSearchQuery, searchOpen, setSearchOpen]);
+  }), [tasks, departments, users, allProcesses, dataLoading, filters, setFilter, resetFilters, selectedUserId, sidebarMode, handleUserClick, handleUserDoubleClick, clearUserSelection, viewMode, setViewMode, settings, toggleSetting, addFeedback, addTask, updateTask, deleteTask, toggleTaskCompletion, toggleTaskImportance, filteredTasks, getTaskStatus, zoomLevel, setZoomLevel, searchQuery, setSearchQuery, searchOpen, setSearchOpen]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
