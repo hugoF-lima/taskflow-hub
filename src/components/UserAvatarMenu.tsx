@@ -27,6 +27,7 @@ export function UserAvatarMenu() {
   const deptColor = dept?.color ?? '0 0% 50%';
 
   return (
+    <>
     <Popover>
       <PopoverTrigger asChild>
         <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ring-offset-background">
