@@ -117,7 +117,10 @@ export function TaskCard({ task, compact }: TaskCardProps) {
 
           {/* Feedback row */}
           <div className="flex items-center justify-between mt-2 pt-2 border-t">
-            <span className="text-[10px] text-muted-foreground">{task.code}</span>
+            <span className="text-[10px] text-muted-foreground">
+              {task.code}
+              {(() => { const creator = users.find(u => u.id === task.createdBy); return creator ? ` · por ${creator.name.split(' ')[0]}` : ''; })()}
+            </span>
             <HoverCard openDelay={300}>
               <HoverCardTrigger asChild>
                 <Button

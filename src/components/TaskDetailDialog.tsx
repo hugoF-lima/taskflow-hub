@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { users, departments, allProcesses, urgencyConfig } from '@/data/mockData';
 import { Task, UrgencyLevel, FeedbackTopic, FeedbackType, FeedbackAttachment } from '@/types';
 import {
@@ -41,6 +42,7 @@ interface TaskDetailDialogProps {
 
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
   const { tasks, addFeedback, updateTask, deleteTask, toggleTaskCompletion } = useAppContext();
+  const { canActOnTask } = useAuth();
   const { toast } = useToast();
   const task = tasks.find(t => t.id === taskId);
 
@@ -175,7 +177,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
               <DialogTitle className="text-base leading-snug flex-1">
                 {editing ? 'Editar Atividade' : task.title}
               </DialogTitle>
-              {!editing && (
+              {!editing && canActOnTask(task) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
@@ -388,6 +390,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                     <div><span className="text-muted-foreground">Importante:</span> <span className="ml-1">{task.important ? 'Sim' : 'Não'}</span></div>
                     <div><span className="text-muted-foreground">Status:</span> <span className="ml-1">{task.completed ? 'Concluída' : 'Ativa'}</span></div>
                     <div><span className="text-muted-foreground">Responsáveis:</span> <span className="ml-1">{taskUsers.map(u => u!.name).join(', ')}</span></div>
+                    <div className="col-span-2"><span className="text-muted-foreground">Criado por:</span> <span className="ml-1 font-medium">{users.find(u => u.id === task.createdBy)?.name || '—'}</span></div>
                   </div>
                   {task.observations && (
                     <div className="pt-2 border-t border-border/50">
