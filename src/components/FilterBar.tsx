@@ -1,5 +1,6 @@
 import { useAppContext } from '@/context/AppContext';
 import { departments, allProcesses } from '@/data/mockData';
+import { useAuth } from '@/context/AuthContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { X, ZoomIn, ZoomOut } from 'lucide-react';
@@ -34,6 +35,11 @@ export function FilterBar() {
   };
 
   const { filters, setFilter, resetFilters, zoomLevel, setZoomLevel } = useAppContext();
+  const { permissions } = useAuth();
+
+  const visibleDepartments = permissions?.visibleDepartments === 'all'
+    ? departments
+    : departments.filter(d => permissions?.visibleDepartments?.includes(d.id));
 
   const hasFilters = Object.values(filters).some(v => {
     if (v && typeof v === 'object' && 'from' in v) return v.from || v.to;
@@ -48,7 +54,7 @@ export function FilterBar() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="__all">Todos os setores</SelectItem>
-          {departments.map(d => (
+          {visibleDepartments.map(d => (
             <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
           ))}
         </SelectContent>
