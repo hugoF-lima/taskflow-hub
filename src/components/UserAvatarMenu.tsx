@@ -100,5 +100,7 @@ export function UserAvatarMenu() {
         </div>
       </PopoverContent>
     </Popover>
+    {permissions?.role === 'admin' && <ManageAccessDialog open={accessOpen} onOpenChange={setAccessOpen} />}
+    </>
   );
 }
