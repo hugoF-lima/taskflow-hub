@@ -176,15 +176,48 @@ export function useSupabaseData() {
     await fetchAll();
   }, [tasks, fetchAll]);
 
-  const addFeedback = useCallback(async (taskId: string, fb: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>) => {
-    await supabase.from('feedback').insert({
+  const addFeedback = useCallback(async (taskId: string, fb: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>, files?: File[]) => {
+    const { data, error } = await supabase.from('feedback').insert({
       task_id: taskId,
       topic: fb.topic,
       type: fb.type,
       comment: fb.comment ?? null,
       anonymous: fb.anonymous,
       author_id: fb.authorId ?? null,
-    });
+    }).select().single();
+
+    if (error || !data) {
+      console.error('addFeedback error:', error);
+      await fetchAll();
+      return;
+    }
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const filePath = `${data.id}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('feedback-attachments')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('feedback-attachments')
+          .getPublicUrl(filePath);
+
+        await supabase.from('feedback_attachments').insert({
+          feedback_id: data.id,
+          name: file.name,
+          url: urlData.publicUrl,
+          type: file.type,
+          size: file.size,
+        });
+      }
+    }
+
     await fetchAll();
   }, [fetchAll]);
 

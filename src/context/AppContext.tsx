@@ -21,7 +21,7 @@ interface AppContextType {
   setViewMode: (mode: ViewMode) => void;
   settings: AppSettings;
   toggleSetting: (key: keyof AppSettings) => void;
-  addFeedback: (taskId: string, feedback: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>) => void;
+  addFeedback: (taskId: string, feedback: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>, files?: File[]) => void;
   addTask: (task: Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>) => void;
   updateTask: (taskId: string, updates: Partial<Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>>) => void;
   deleteTask: (taskId: string) => void;
@@ -118,8 +118,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return 'active';
   }, []);
 
-  const addFeedback = useCallback((taskId: string, fb: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>) => {
-    sbData.addFeedback(taskId, fb);
+  const addFeedback = useCallback((taskId: string, fb: Omit<Feedback, 'id' | 'taskId' | 'createdAt'>, files?: File[]) => {
+    sbData.addFeedback(taskId, fb, files);
   }, [sbData]);
 
   const toggleTaskCompletion = useCallback((taskId: string): boolean => {

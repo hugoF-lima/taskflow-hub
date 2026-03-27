@@ -136,12 +136,9 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     onOpenChange(false);
   };
 
-  const filesToAttachments = (files: File[]): FeedbackAttachment[] =>
-    files.map(f => ({ name: f.name, url: URL.createObjectURL(f), type: f.type, size: f.size }));
-
   const handleFeedbackSubmit = () => {
     if (!fbTopic || !fbType) return;
-    addFeedback(taskId, { topic: fbTopic, type: fbType, comment: fbComment || undefined, anonymous: fbAnonymous, authorId: fbAnonymous ? undefined : 'u1', attachments: fbAttachments.length > 0 ? filesToAttachments(fbAttachments) : undefined });
+    addFeedback(taskId, { topic: fbTopic, type: fbType, comment: fbComment || undefined, anonymous: fbAnonymous, authorId: fbAnonymous ? undefined : 'u1' }, fbAttachments.length > 0 ? fbAttachments : undefined);
     setFbTopic('');
     setFbType('');
     setFbComment('');
@@ -150,7 +147,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
   const handleResolve = () => {
     if (resolveFbTopic && resolveFbType) {
-      addFeedback(taskId, { topic: resolveFbTopic, type: resolveFbType, comment: resolveFbComment || undefined, anonymous: resolveFbAnonymous, authorId: resolveFbAnonymous ? undefined : 'u1', attachments: resolveFbAttachments.length > 0 ? filesToAttachments(resolveFbAttachments) : undefined });
+      addFeedback(taskId, { topic: resolveFbTopic, type: resolveFbType, comment: resolveFbComment || undefined, anonymous: resolveFbAnonymous, authorId: resolveFbAnonymous ? undefined : 'u1' }, resolveFbAttachments.length > 0 ? resolveFbAttachments : undefined);
     }
     toggleTaskCompletion(taskId);
     setConfirmResolve(false);
