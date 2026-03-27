@@ -88,7 +88,18 @@ export function useSupabaseData() {
   }, [fetchAll]);
 
   const addTask = useCallback(async (taskData: Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>) => {
-    const code = `GAP-${String(tasks.length + 1).padStart(4, '0')}`;
+    const { data: maxCodeRow } = await supabase
+      .from('tasks')
+      .select('code')
+      .order('code', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const lastNum = maxCodeRow?.code
+      ? parseInt(maxCodeRow.code.replace('GAP-', ''), 10)
+      : 0;
+    const code = `GAP-${String(lastNum + 1).padStart(4, '0')}`;
+
     const { data, error } = await supabase.from('tasks').insert({
       code,
       title: taskData.title,
@@ -103,7 +114,6 @@ export function useSupabaseData() {
 
     if (error || !data) { console.error('addTask error:', error); return; }
 
-    // Insert assignees
     if (taskData.assigneeIds.length > 0) {
       await supabase.from('task_assignees').insert(
         taskData.assigneeIds.map(uid => ({ task_id: data.id, user_id: uid }))
@@ -111,7 +121,7 @@ export function useSupabaseData() {
     }
 
     await fetchAll();
-  }, [tasks.length, fetchAll]);
+  }, [fetchAll]);
 
   const updateTask = useCallback(async (taskId: string, updates: Partial<Omit<Task, 'id' | 'code' | 'createdAt' | 'feedback'>>) => {
     const dbUpdates: Record<string, any> = {};
