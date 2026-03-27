@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ClipboardList, LogIn, Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
+import { LogIn, Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Department } from '@/types';
 
@@ -61,9 +61,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-            <ClipboardList className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <img src="/nevoni-logo.png" alt="Nevoni Logo" className="h-12 w-12 rounded-xl object-contain" />
           <h1 className="text-xl font-bold text-foreground tracking-tight">
             Gerenciamento de Atividades
           </h1>
