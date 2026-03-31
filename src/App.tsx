@@ -7,13 +7,15 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { isSyncStateActive } from "@/lib/utils";
 
 const queryClient = new QueryClient();
 
 function AuthGate() {
   const { isAuthenticated, loading } = useAuth();
+  const isSyncPending = isSyncStateActive();
 
-  if (loading) {
+  if (loading || isSyncPending) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />

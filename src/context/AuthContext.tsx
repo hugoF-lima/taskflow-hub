@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { User, UserPermissions, Task } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
+import { isSyncStateActive } from '@/lib/utils';
 
 export interface PendingRegistration {
   id: string;
@@ -119,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadUserData]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    if (isSyncStateActive()) return false;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return !error;
   }, []);
