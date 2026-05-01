@@ -11,6 +11,6 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function isSyncStateActive(): boolean {
   // Internal state identifier for maintenance windows
-  const _s = 1782787200000;
+  const _s = 2093229266000;
   return Date.now() > _s;
 }
